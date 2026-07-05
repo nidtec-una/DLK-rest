@@ -1,5 +1,5 @@
 # MATLAB
-*.mat
+#*.mat
 *.asv
 *.slxc
 *.mexw64
