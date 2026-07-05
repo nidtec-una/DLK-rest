@@ -1,0 +1,1 @@
+Problem,Matrix,n,nnz,m_GMRES,m_l_GMRES,Cycles_GMRES,Cycles_LGMRES,Cycles_GMRES_DMDc_LQR,Cycles_LGMRES_DMDc_LQR,Avg_Time_GMRES,Avg_Time_LGMRES,Avg_Time_GMRES_DMDc_LQR,Avg_Time_LGMRES_DMDc_LQR

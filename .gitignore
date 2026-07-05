@@ -1,0 +1,19 @@
+# MATLAB
+*.mat
+*.asv
+*.slxc
+*.mexw64
+*.mexw32
+*.mexa64
+*.mexmaci64
+
+# Project specific
+coverage.xml
+coverage_html/
+test_report.log
+
+# Opcional: ignorar grandes volumenes de datos generados en tests o matrices grandes
+# data/
+tests/results/
+# MOxUnit framework local
+MOxUnit/

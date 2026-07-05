@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this code or the DMDc-LQR framework in your research, please cite it as below."
+authors:
+- family-names: "Benitez"
+  given-names: "Carlos"
+- family-names: "Cabral"
+  given-names: "Juan C."
+- family-names: "Schaerer"
+  given-names: "Christian E."
+title: "Optimal Control for Restarting Minimal Residual Krylov Solvers via Data-Driven Residual Dynamics"
+version: 1.0.0
+date-released: 2025-01-01
+url: "https://github.com/nidtec-una/DLK-rest"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Benitez"
+    given-names: "Carlos"
+  - family-names: "Cabral"
+    given-names: "Juan C."
+  - family-names: "Schaerer"
+    given-names: "Christian E."
+  title: "Optimal Control for Restarting Minimal Residual Krylov Solvers via Data-Driven Residual Dynamics"
+  journal: "Submitted to SIAM (Under Review)"
+  year: 2025

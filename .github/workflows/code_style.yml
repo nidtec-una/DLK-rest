@@ -1,0 +1,29 @@
+name: miss_hit
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  miss_hit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install miss_hit
+        run: pip install miss_hit
+
+      - name: Code quality
+        run: mh_metric --ci
+
+      - name: Style check
+        run: mh_style --process-slx --ci

@@ -1,0 +1,52 @@
+---
+name: 'MATLAB tests'
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: ['*']
+
+jobs:
+  matlab_tests:
+    strategy:
+      matrix:
+        version: [R2023a]
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Install MATLAB
+      uses: matlab-actions/setup-matlab@v1.2.4
+      with:
+        release: ${{ matrix.version }}
+
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 1
+
+    - name: Install Moxunit and MOcov
+      run: |
+        git clone https://github.com/MOxUnit/MOxUnit.git --depth 1
+        git clone https://github.com/MOcov/MOcov.git --depth 1
+
+    - name: Run tests
+      uses: matlab-actions/run-command@v1.2.1
+      with:
+        command: cd(fullfile(getenv('GITHUB_WORKSPACE'))); run run_tests;
+
+    - name: Check logs unix
+      if: matrix.os == 'ubuntu-latest'
+      run: grep -q 0 test_report.log || { echo "Some tests failed. Check the 'Run tests' step to know which ones." >&2; exit 1; }
+
+    - name: Code coverage
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      uses: codecov/codecov-action@v4
+      with:
+        file: coverage.xml
+        flags: ${{ matrix.os }}_matlab-${{ matrix.version }}
+        name: codecov-umbrella
+        fail_ci_if_error: false
