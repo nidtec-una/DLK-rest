@@ -21,6 +21,20 @@ function run_tests()
     addpath(genpath(folder_to_cover));
     addpath(genpath(fullfile(matlab_dir, 'data')));
 
+    % Initialize MOxUnit if available locally (useful for GitHub Actions)
+    if exist(fullfile(matlab_dir, 'MOxUnit', 'MOxUnit', 'moxunit_set_path.m'), 'file')
+        run(fullfile(matlab_dir, 'MOxUnit', 'MOxUnit', 'moxunit_set_path.m'));
+    end
+    
+    % Initialize MOcov if available locally
+    if exist(fullfile(matlab_dir, 'MOcov', 'MOcov', 'mocov_set_path.m'), 'file')
+        run(fullfile(matlab_dir, 'MOcov', 'MOcov', 'mocov_set_path.m'));
+    end
+    
+    if exist('moxunit_runtests', 'file') == 0
+        error('MOxUnit is not installed or not in the MATLAB path.');
+    end
+
     if ispc
         success = moxunit_runtests(test_folder, '-verbose');
 
