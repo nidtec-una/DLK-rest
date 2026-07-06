@@ -22,7 +22,7 @@ function show_bar_dual_custom(data_list, title_label, y_label, log_scale, save_f
     active_ids = (1:num_total_matrices);
     active_ids = active_ids(valid_mask);
 
-    % --- 2. FIGURA – Proporciones SIAM ---
+    % --- 2. FIGURA - Proporciones SIAM ---
     fig = figure('Color', 'w', 'Units', 'centimeters', 'Position', [2 2 16 8.5]);
     tlo = tiledlayout(1, 1, 'Padding', 'loose', 'TileSpacing', 'compact');
     ax = nexttile(tlo);
@@ -48,7 +48,7 @@ function show_bar_dual_custom(data_list, title_label, y_label, log_scale, save_f
         legends{i} = data_list{i}{2};
     end
 
-    % --- 4. AJUSTE DE LÍMITES (PADDING TOTAL) ---
+    % --- 4. AJUSTE DE LIMITES (PADDING TOTAL) ---
     all_values = cell2mat(filtered_data');
     max_val = max(all_values(:));
     min_val_all = min(all_values(:));
@@ -91,7 +91,7 @@ function show_bar_dual_custom(data_list, title_label, y_label, log_scale, save_f
     legend(ax, handles, legends, 'Interpreter', 'latex', ...
            'FontSize', 8, 'Location', 'northeast', 'Box', 'off');
 
-    % --- 7. EXPORTACIÓN TÉCNICA ---
+    % --- 7. EXPORTACION TECNICA ---
     set(fig, 'Renderer', 'painters');
     clean_title = regexprep(title_label, '[^a-zA-Z0-9]', '_');
     export_path = fullfile(save_folder, sprintf('bar_plot_%s.eps', clean_title));
