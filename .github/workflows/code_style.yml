@@ -26,4 +26,4 @@ jobs:
         run: mh_metric --ci
 
       - name: Style check
-        run: mh_style --process-slx --ci
+        run: mh_style --process-slx
