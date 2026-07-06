@@ -5,7 +5,7 @@ function [MatR, xf, vecNormRrel, cycles] = GMRES(A, b, x0, m, tol, number_of_sam
     % Inicialización
     MatR = [];
     vecNormRrel = [];
-    R = b - A*x0;
+    R = b - A * x0;
     normR0 = norm(R);
 
     if normR0 == 0
@@ -17,24 +17,24 @@ function [MatR, xf, vecNormRrel, cycles] = GMRES(A, b, x0, m, tol, number_of_sam
     end
 
     normb = norm(b);
-    vecNormRrel(1) = normR0/max(normb, eps);
-    MatR(:,1) = R / max(normR0, eps);
+    vecNormRrel(1) = normR0 / max(normb, eps);
+    MatR(:, 1) = R / max(normR0, eps);
 
     i = 2;
     while i <= number_of_samples + 1 && vecNormRrel(end) >= tol
 
         xf = gmres(A, b, m, tol, 1, [], [], x0);
-        R = b - A*xf;
+        R = b - A * xf;
         nR = norm(R);
         rRel = nR / max(normb, eps);
 
         % Guarda resultados
         vecNormRrel(i) = rRel;
-        MatR(:,i) = R / max(nR, eps);
+        MatR(:, i) = R / max(nR, eps);
 
         x0 = xf;
         i = i + 1;
     end
-    cycles = size(MatR, 2)-1;
+    cycles = size(MatR, 2) - 1;
     xf = x0;
 end

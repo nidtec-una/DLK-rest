@@ -20,7 +20,7 @@ function show_bar_custom(error_list, title_label)
         color = error_list{i}{4};
 
         % desplazamiento horizontal para agrupar
-        offset = (i - (num_series+1)/2) * bar_width;
+        offset = (i - (num_series + 1) / 2) * bar_width;
 
         % graficar barras
         bar(x + offset, R, bar_width, 'FaceColor', color, 'EdgeColor', 'none');
@@ -32,9 +32,9 @@ function show_bar_custom(error_list, title_label)
     title(title_label, 'Interpreter', 'latex', 'FontSize', 12);
     xlabel('Snapshot $j$', 'Interpreter', 'latex', 'FontSize', 10);
     ylabel('Error', ...
-        'Interpreter', 'latex', 'FontSize', 10);
-    
-     % Ajustar ticks solo a los lotes existentes
+           'Interpreter', 'latex', 'FontSize', 10);
+
+    % Ajustar ticks solo a los lotes existentes
     xticks(x);
     xticklabels(arrayfun(@(j) sprintf('%d', j), 1:num_groups, 'UniformOutput', false));
 

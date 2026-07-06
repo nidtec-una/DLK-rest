@@ -5,7 +5,7 @@
 %   Inputs:
 %       file_path: path to the .mat file
 %   Outputs:
-%       A: sparse matrix   
+%       A: sparse matrix
 %       b: right-hand side vector
 function [A, b] = load_matrices(file_path)
     load(file_path);
@@ -13,8 +13,7 @@ function [A, b] = load_matrices(file_path)
     try
         b = Problem.b;
     catch
-        b = ones(size(Problem.A,1),1);
+        b = ones(size(Problem.A, 1), 1);
     end
     A = Problem.A;
-    end
-    
+end

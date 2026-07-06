@@ -25,12 +25,12 @@ function run_tests()
     if exist(fullfile(matlab_dir, 'MOxUnit'), 'dir')
         addpath(genpath(fullfile(matlab_dir, 'MOxUnit')));
     end
-    
+
     % Initialize MOcov if available locally
     if exist(fullfile(matlab_dir, 'MOcov'), 'dir')
         addpath(genpath(fullfile(matlab_dir, 'MOcov')));
     end
-    
+
     if exist('moxunit_runtests', 'file') == 0
         error('MOxUnit is not installed or not in the MATLAB path.');
     end
