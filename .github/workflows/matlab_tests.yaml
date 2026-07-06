@@ -44,8 +44,9 @@ jobs:
 
     - name: Code coverage
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         file: coverage.xml
         flags: ${{ matrix.os }}_matlab-${{ matrix.version }}
         name: codecov-umbrella
