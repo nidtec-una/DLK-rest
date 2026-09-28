@@ -9,13 +9,11 @@ function [X_aprox_p, Xhat_p, Hbar, Bbar, Uhat, Htil, Btil] = DMDc(StateData, m, 
     Omega = [X; Up];
 
     [U, Sig, V] = svd(Omega, 'econ');
-    fprintf('Rango truncado q = %d\n', q);
     Util = U(:, 1:q);
     Sigtil = Sig(1:q, 1:q);
     Vtil = V(:, 1:q);
 
     [U, ~, ~] = svd(StateData, 'econ');
-    fprintf('Rango truncado para estados t = %d\n', t);
     Uhat = U(:, 1:t);
 
     U_1 = Util(1:n, :);

@@ -91,11 +91,20 @@ function show_bar_dual_custom(data_list, title_label, y_label, log_scale, save_f
     legend(ax, handles, legends, 'Interpreter', 'latex', ...
            'FontSize', 8, 'Location', 'northeast', 'Box', 'off');
 
-    % --- 7. EXPORTACION TECNICA ---
-    set(fig, 'Renderer', 'painters');
+    eps_folder = fullfile(save_folder, 'eps');
+    png_folder = fullfile(save_folder, 'png');
+    if ~exist(eps_folder, 'dir')
+        mkdir(eps_folder);
+    end
+    if ~exist(png_folder, 'dir')
+        mkdir(png_folder);
+    end
+
     clean_title = regexprep(title_label, '[^a-zA-Z0-9]', '_');
-    export_path = fullfile(save_folder, sprintf('bar_plot_%s.eps', clean_title));
-    print(fig, '-depsc2', '-r600', export_path);
+    export_path_eps = fullfile(eps_folder, sprintf('bar_plot_%s.eps', clean_title));
+    print(fig, '-depsc2', '-r600', export_path_eps);
+    export_path_png = fullfile(png_folder, sprintf('bar_plot_%s.png', clean_title));
+    exportgraphics(fig, export_path_png, 'Resolution', 300);
 
     hold(ax, 'off');
 end

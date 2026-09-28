@@ -154,6 +154,14 @@ function [xf, logres, VectResNorm] = lgmres_v2(A, b, mL, lL, tol, itermax, x0)
                 z(:, lL) = aux;
             end
 
+            % Progress loading indicator
+            current_iter = size(logres, 1) - 1;
+            pct = min(100, round((current_iter / itermax) * 100));
+            nb = round((pct / 100) * 20);
+            bar_str = [repmat('=', 1, nb), repmat('-', 1, 20 - nb)];
+            fprintf(1, '\r  LGMRES Progress: [%s] %3d%% (cycle %d/%d)', bar_str, pct, current_iter, itermax);
+            drawnow;
+
             if logres(size(logres, 1), 1) < tol || size(logres, 1) == maxit
                 flag = 1;
             else
@@ -162,4 +170,5 @@ function [xf, logres, VectResNorm] = lgmres_v2(A, b, mL, lL, tol, itermax, x0)
 
         end
     end
+    fprintf(1, '\n');
     xf = xm;

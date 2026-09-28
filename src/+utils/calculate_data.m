@@ -1,9 +1,9 @@
 function T = calculate_data(A, b, p)
-    % 1. Generate grid and filter valid points
-    [P_grid, Q_grid, T_grid] = meshgrid(1:10, 1:10, 1:10);
-    mask = (Q_grid <= P_grid) & (T_grid <= P_grid + 1);
+    % 1. Generate 2D grid (p = q) and filter valid points
+    [P_grid, T_grid] = meshgrid(1:10, 1:10);
+    mask = (T_grid <= P_grid + 1);
     P = P_grid(mask);
-    Q = Q_grid(mask);
+    Q = P; % p = q
     T_vec = T_grid(mask);
 
     num_pts = length(P);
@@ -11,21 +11,23 @@ function T = calculate_data(A, b, p)
     C_rmssd = zeros(num_pts, 1);
     valid = false(num_pts, 1);
 
-    % 2. Initialize progress bar with current method
-    msg = sprintf('Calculating %s (alpha = %.0e)', p.method, p.current_alpha);
-    h = waitbar(0, msg);
+    % 2. Initialize progress / loading indicator
+    has_gui = usejava('awt');
+    hWait = [];
+    msg = sprintf('Calculating DMDc-LQR-GMRES (alpha = %.0e)', p.current_alpha);
+    if has_gui
+        try
+            hWait = waitbar(0, msg, 'Name', 'Parameter Sweep Progress');
+        catch
+            hWait = [];
+        end
+    end
+    fprintf('\n%s\n', msg);
 
     for k = 1:num_pts
         try
-            % DYNAMIC METHOD SELECTION
-            if strcmpi(p.method, 'LGMRES')
-                % [xf4, R4, totiter4, m_values4, p_values4, error_per_snp4] = snapshot_model.r.LGMRES_DMDc_LQR_fixp(A, b, x0, m0-l, l, tol, cycle_max,alpha);
-                [~, ~, ~, m, ~, ~] = snapshot_model.r.LGMRES_DMDc_LQR_fixp( ...
-                                                                      A, b, p.x0, p.m0 - p.l, p.l, p.tol, p.cycles, p.current_alpha, P(k), Q(k), T_vec(k));
-            else % Default to GMRES
-                [~, ~, ~, m, ~, ~] = snapshot_model.r.GMRES_DMDc_LQR_fixp( ...
-                                                                     A, b, p.x0, p.m0, p.tol, p.cycles, p.current_alpha, P(k), Q(k), T_vec(k));
-            end
+            [~, ~, ~, m, ~, ~] = snapshot_model.r.GMRES_DMDc_LQR_fixp( ...
+                                                                 A, b, p.x0, p.m0, p.tol, p.cycles, p.current_alpha, P(k), Q(k), T_vec(k));
 
             if length(m) > 2
                 C_mean(k) = mean(m) / p.m_max;
@@ -36,21 +38,25 @@ function T = calculate_data(A, b, p)
             % Convergence error or interruption
         end
 
-        % 3. Update progress bar
-        if mod(k, 5) == 0 || k == num_pts
-            waitbar(k / num_pts, h, sprintf('%s Alpha: %.0e | %d/%d', ...
-                                          p.method, p.current_alpha, k, num_pts));
-        end
+        % 3. Update progress bar (Console + GUI waitbar)
+        progress = k / num_pts;
+        pct = round(progress * 100);
+        num_bars = round(progress * 20);
+        bar_str = [repmat('=', 1, num_bars), repmat('-', 1, 20 - num_bars)];
 
-        % Optional: Abort if waitbar is closed
-        if ~ishandle(h)
-            break
+        if mod(k, 2) == 0 || k == num_pts
+            fprintf(1, '\rProgress: [%s] %3d%% (%d/%d)', bar_str, pct, k, num_pts);
+            drawnow;
+            if ~isempty(hWait) && ishandle(hWait)
+                waitbar(progress, hWait, sprintf('Alpha: %.0e | [%s] %d%%', p.current_alpha, bar_str, pct));
+            end
         end
     end
+    fprintf('\nDone.\n');
 
-    % 4. Close bar and package results
-    if ishandle(h)
-        close(h);
+    % 4. Close GUI waitbar if open
+    if ~isempty(hWait) && ishandle(hWait)
+        close(hWait);
     end
 
     % Filter only valid data

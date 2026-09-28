@@ -43,15 +43,19 @@ function [xf, R, tot_cycles, m_values, p_values, erro_per_snp] = GMRES_DMDc_LQR_
     while tot_cycles <= cycleMax && (isempty(R) || R(end) >= tol)
 
         m_values = [m_values, m];
-        disp(['Snapshot ', num2str(j), ', m = ', num2str(m)]);
+
+        extra_info.j = j;
+        extra_info.m = m;
+        extra_info.tot_cycles = tot_cycles;
+        extra_info.cycleMax = cycleMax;
 
         %% Construir snapshot con GMRES
-        [MatR, xf, normRg, cycles_gmres] = sample_gmres.GMRES(A, b, xf, m, tol, p);
+        [MatR, xf, normRg, cycles_gmres] = sample_gmres.GMRES(A, b, xf, m, tol, p, extra_info);
         tot_cycles = tot_cycles + cycles_gmres;
         p_values = [p_values, cycles_gmres];
 
         % Condicion de parada si ocurre convergencia prematura
-        if cycles_gmres < p
+        if cycles_gmres < p || (tot_cycles >= cycleMax) || normRg(end) < tol
             R = [R, normRg];
             return
         end
@@ -87,4 +91,5 @@ function [xf, R, tot_cycles, m_values, p_values, erro_per_snp] = GMRES_DMDc_LQR_
         j = j + 1; % incrementar contador de snapshots
 
     end
+    fprintf(1, '\n');
 end

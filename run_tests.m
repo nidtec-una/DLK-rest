@@ -1,10 +1,12 @@
-function run_tests()
+function run_tests(test_name)
     %
     %   run tests with code coverage
     %
     %   USAGE::
     %
-    %       run_tests()
+    %       run_tests()                     % Runs all tests in tests/
+    %       run_tests('test_performance')   % Runs specific test
+    %       run_tests('test_collection.m')  % Runs specific test file
     %
 
     tic;
@@ -16,14 +18,39 @@ function run_tests()
 
     folder_to_cover = fullfile(matlab_dir, 'src');
 
-    test_folder = fullfile(matlab_dir, 'tests');
-
     addpath(genpath(folder_to_cover));
     addpath(genpath(fullfile(matlab_dir, 'data')));
+    addpath(genpath(fullfile(matlab_dir, 'tests')));
 
-    % Initialize MOxUnit if available locally (useful for GitHub Actions)
-    if exist(fullfile(matlab_dir, 'MOxUnit'), 'dir')
-        addpath(genpath(fullfile(matlab_dir, 'MOxUnit')));
+    % Determine target test file or folder
+    if nargin < 1 || isempty(test_name)
+        target_path = fullfile(matlab_dir, 'tests');
+    else
+        [~, name, ext] = fileparts(test_name);
+        if isempty(ext)
+            ext = '.m';
+        end
+        target_path = fullfile(matlab_dir, 'tests', [name, ext]);
+        if ~exist(target_path, 'file') && exist(test_name, 'file')
+            target_path = test_name;
+        end
+    end
+
+    % Suppress warnings for nonexistent paths saved in MATLAB preferences
+    warning('off', 'MATLAB:dispatcher:pathWarning');
+
+    % Search for MOxUnit in local or neighboring directories
+    moxunit_candidates = { ...
+        fullfile(matlab_dir, 'MOxUnit'), ...
+        fullfile(matlab_dir, '..', 'MOxUnit'), ...
+        fullfile(matlab_dir, '..', '1.1. Repo Mejorado Primer Articulo', 'DLK-rest', 'MOxUnit'), ...
+        fullfile(matlab_dir, '..', 'KrySBAS-MATLAB', 'MOxUnit') ...
+    };
+
+    for k = 1:length(moxunit_candidates)
+        if exist(moxunit_candidates{k}, 'dir')
+            addpath(genpath(moxunit_candidates{k}));
+        end
     end
 
     % Initialize MOcov if available locally
@@ -36,10 +63,10 @@ function run_tests()
     end
 
     if ispc
-        success = moxunit_runtests(test_folder, '-verbose');
+        success = moxunit_runtests(target_path, '-verbose');
 
     else
-        success = moxunit_runtests(test_folder, ...
+        success = moxunit_runtests(target_path, ...
                                    '-verbose', ...
                                    '-recursive', ...
                                    '-with_coverage', ...

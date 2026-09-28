@@ -42,9 +42,12 @@ function show_bar_custom(error_list, title_label)
     set(gca, 'YScale', 'log'); % escala logarítmica
     set(gca, 'FontSize', 10, 'LineWidth', 1);
 
-    % Guardar .eps
     clean_title = regexprep(title_label, '[^a-zA-Z0-9]', '');
+    if ~exist('test', 'dir')
+        mkdir('test');
+    end
     print('-depsc2', '-r300', fullfile('test', [clean_title, '_bars.eps']));
+    exportgraphics(gcf, fullfile('test', [clean_title, '_bars.png']), 'Resolution', 300);
 
     hold off;
 end

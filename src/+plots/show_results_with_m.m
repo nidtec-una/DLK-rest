@@ -174,9 +174,18 @@ function show_results_with_m(R_list, title_label, m_limits, m_values, p_values, 
     % GUARDAR EPS (VECTORIAL)
     % ============================================================
     clean_title = regexprep(title_label, '[^a-zA-Z0-9]', '');
-    if ~exist(save_folder, 'dir')
-        mkdir(save_folder);
+    eps_folder = fullfile(save_folder, 'eps');
+    png_folder = fullfile(save_folder, 'png');
+    if ~exist(eps_folder, 'dir')
+        mkdir(eps_folder);
     end
-    exportgraphics(fig, fullfile(save_folder, [clean_title, '_with_m.eps']), 'ContentType', 'vector');
+    if ~exist(png_folder, 'dir')
+        mkdir(png_folder);
+    end
+    if ishandle(fig)
+        saveas(fig, fullfile(eps_folder, [clean_title, '_with_m.eps']), 'epsc');
+        saveas(fig, fullfile(png_folder, [clean_title, '_with_m.png']));
+        close(fig);
+    end
 
 end

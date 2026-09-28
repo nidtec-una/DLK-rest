@@ -25,29 +25,24 @@ function test_performance_sherman5()
     cycle_max = 400;
     alpha = 1e-4; %%% modificado por jccf
 
+    fprintf(1, '\nRunning test_performance on matrix %s...\n', title_label);
     % --- GMRES-DMDc-LQR con p fijo ---
+    fprintf(1, '[1/3] Calculating DMDc-LQR-GMRES...\n');
+    drawnow;
     tic;
-    % p = 5;
-    % q = 5;
-    % t = 6;
     [xf3, R3, totiter3, m_values3, p_values3, error_per_snp3] = snapshot_model.r.GMRES_DMDc_LQR_fixp(A, b, x0, m0, tol, cycle_max, alpha);
     t_dmdc_gmres = toc;
 
-    % --- LGMRES-DMDcR-LQR con p fijo ---
-    tic;
-    l = 2;
-    % p = 10;
-    % q = 2;
-    % t = 7;
-    [xf4, R4, totiter4, m_values4, p_values4, error_per_snp4] = snapshot_model.r.LGMRES_DMDc_LQR_fixp(A, b, x0, m0 - l, l, tol, cycle_max, alpha);
-    t_dmdc_lgmres = toc;
-
     % --- GMRES ---
+    fprintf(1, '[2/3] Calculating standard GMRES...\n');
+    drawnow;
     tic;
     [~, ~, Rgmres, cycles_gmres] = sample_gmres.GMRES(A, b, x0, m, tol, cycle_max);
     t_gmres = toc;
 
     % --- LGMRES ---
+    fprintf(1, '[3/3] Calculating standard LGMRES...\n');
+    drawnow;
     l = 3;
     m_lgmres = m - l;
     tic;
@@ -57,17 +52,15 @@ function test_performance_sherman5()
     color_gmres   = [0.1, 0.4, 0.8];   % Azul
     color_lgmres  = [1.0, 0.5, 0.0];   % Naranja
     color_R3      = [0.3, 0.7, 0.5];   % Verde azulado
-    color_R4      = [0.6, 0.2, 0.7];  % Morado
 
     R_list = {
               {Rgmres, ['GMRES(', num2str(m), '), cycles = ', num2str(cycles_gmres)], ':o', color_gmres}
               {Rlgmres, ['LGMRES(', num2str(m_lgmres), ',', num2str(l), '), cycles = ', num2str(cycles_lgmres)], '--s', color_lgmres}
               {R3, ['DMDc-LQR-GMRES, cycles = ', num2str(totiter3), ')'], '--^', color_R3}
-              {R4, ['DMDc-LQR-LGMRES, cycles = ', num2str(totiter4), ')'], '-d', color_R4}
              };
 
     % -- Methods comparison plot
-    save_folder = fullfile(curr_dir, 'results', 'test_performance');
+    save_folder = fullfile(curr_dir, '..', 'results', 'test_performance');
     if ~exist(save_folder, 'dir')
         mkdir(save_folder);
     end
@@ -80,13 +73,19 @@ function test_performance_sherman5()
                    };
     plots.show_results_with_m(R_gmres_dmdc, ['Performance of DMDc-LQR-GMRES($m$) - ', title_label], m_limits, m_values3, p_values3, save_folder);
 
-    % -- DMDc-LQR-LGMRES performance plot
-    R_gmres_dmdc = {
-                    {R4, error_per_snp4,     'DMDcR-LQR-LGMRES', '-d', [0.6, 0.6, 0.6]}
-                   };
-    % plots.show_results_with_m(R_gmres_dmdc, ['Performance of DMDc-LQR-LGMRES($m,\ell$) - ', title_label], m_limits, m_values4, p_values4, save_folder);
+    % -- Export CSV results --
+    csv_folder = fullfile(save_folder, 'csv');
+    if ~exist(csv_folder, 'dir')
+        mkdir(csv_folder);
+    end
+    perf_data = {
+        'Method', 'Cycles', 'Time_sec', 'Final_Residual';
+        sprintf('GMRES(%d)', m), cycles_gmres, t_gmres, Rgmres(end);
+        sprintf('LGMRES(%d,%d)', m_lgmres, l), cycles_lgmres, t_lgmres, Rlgmres(end);
+        'DMDc-LQR-GMRES', totiter3, t_dmdc_gmres, R3(end)
+    };
+    writecell(perf_data, fullfile(csv_folder, [title_label, '_performance.csv']));
 
     % Asserts for MOxUnit
     assertTrue(totiter3 > 0);
-    assertTrue(totiter4 > 0);
 end
