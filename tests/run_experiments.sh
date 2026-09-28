@@ -8,11 +8,11 @@ OUT_DIR="results"
 mkdir -p "$OUT_DIR"
 rm -f "$OUT_DIR"/history_*.csv
 
-echo "=========================================================================="
-echo " EXPERIMENTOS PETSc: DLK-GMRES vs Nativos (Malla ${GRID_M}x${GRID_N})"
-echo "=========================================================================="
+echo "=========================================================================================="
+echo " EXPERIMENTOS PETSc: Solvers DLK (GMRES / LGMRES) vs Baselines Nativos (Malla ${GRID_M}x${GRID_N})"
+echo "=========================================================================================="
 printf "%-22s | %-12s | %-14s | %-10s\n" "Configuración Solver" "Iteraciones" "Residuo Final" "Tiempo (s)"
-echo "--------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------------------"
 
 run_case() {
     NAME=$1
@@ -28,19 +28,20 @@ run_case() {
     printf "%-22s | %-12s | %-14s | %-10s\n" "$NAME" "$ITS" "$RES" "$TIME"
 }
 
-run_case "DLK_LQR_m20" -ksp_type dlk -ksp_dlk_m0 20 -ksp_dlk_controller lqr
-run_case "DLK_PD_m20"  -ksp_type dlk -ksp_dlk_m0 20 -ksp_dlk_controller pd
-run_case "GMRES_m20"   -ksp_type gmres -ksp_gmres_restart 20
-run_case "GMRES_m30"   -ksp_type gmres -ksp_gmres_restart 30
-run_case "BiCGStab"    -ksp_type bcgs
+run_case "DLK_LQR_GMRES"   -ksp_type dlk -ksp_dlk_m0 20 -ksp_dlk_controller lqr
+run_case "DLK_LQR_LGMRES"  -ksp_type dlk_lgmres -ksp_dlk_m0 20 -ksp_dlk_controller lqr -ksp_dlk_aug 2
+run_case "DLK_PD_GMRES"    -ksp_type dlk -ksp_dlk_m0 20 -ksp_dlk_controller pd
+run_case "GMRES_m20"       -ksp_type gmres -ksp_gmres_restart 20
+run_case "LGMRES_m20"      -ksp_type lgmres -ksp_lgmres_restart 20 -ksp_lgmres_augment 2
+run_case "BiCGStab"        -ksp_type bcgs
 
-echo "--------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------------------"
 echo ""
 echo "Generando gráfica comparativa..."
-python3 plot_convergence.py "$OUT_DIR"/history_*.csv -o "$OUT_DIR/convergence_dlk_vs_gmres.png" -t "PETSc: DLK-GMRES Adaptativo vs Nativos (${GRID_M}x${GRID_N})"
+python3 plot_convergence.py "$OUT_DIR"/history_*.csv -o "$OUT_DIR/convergence_dlk_vs_gmres.png" -t "PETSc: DLK-GMRES & DLK-LGMRES Adaptativos vs Nativos (${GRID_M}x${GRID_N})"
 
 echo ""
-echo "=========================================================================="
+echo "=========================================================================================="
 echo " [✓] Experimento finalizado con éxito."
 echo " [✓] Gráfica guardada en: $OUT_DIR/convergence_dlk_vs_gmres.png"
-echo "=========================================================================="
+echo "=========================================================================================="

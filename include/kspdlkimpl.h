@@ -4,7 +4,7 @@
 #include <petsc/private/kspimpl.h>
 #include "petsckspdlk.h"
 
-/* Estructura de contexto privado del solver KSPDLK */
+/* Estructura de contexto privado del solver KSPDLK / KSPDLKLGMRES */
 typedef struct {
     /* --- Parámetros del espacio de Krylov y reinicio --- */
     PetscInt          m;              /* Parámetro de reinicio actual m_k */
@@ -12,6 +12,12 @@ typedef struct {
     PetscInt          m_min;          /* Cota inferior de m (por defecto 2) */
     PetscInt          m_max;          /* Cota superior de m (por defecto 100) */
     PetscInt          max_k;          /* Capacidad máxima de memoria reservada para Arnoldi */
+
+    /* --- Parámetros LGMRES (subespacio de enriquecimiento) --- */
+    PetscInt          aug_l;          /* Número de vectores de enriquecimiento l (0 = GMRES, >0 = LGMRES) */
+    Vec              *aug_vecs;       /* Buffer de vectores de aproximaciones previas z_0, ..., z_{l-1} */
+    PetscInt          num_aug;        /* Número actual de vectores en el buffer (0 <= num_aug <= l) */
+    Vec               delta_x;        /* Vector auxiliar de desplazamiento de solución */
 
     /* --- Parámetros de control adaptativo DMDc-LQR / PD --- */
     DLKControllerType ctrl_type;      /* DLK_CTRL_LQR, DLK_CTRL_PD, DLK_CTRL_NONE */

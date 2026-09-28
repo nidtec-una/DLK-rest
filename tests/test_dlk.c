@@ -20,8 +20,9 @@ int main(int argc, char **argv)
     PetscFunctionBeginUser;
     PetscCall(PetscInitialize(&argc, &argv, (char *)0, help));
 
-    /* Registrar el solver nativo KSPDLK */
+    /* Registrar los solvers nativos KSPDLK (GMRES) y KSPDLKLGMRES (LGMRES) */
     PetscCall(KSPRegister(KSPDLK, KSPCreate_DLK));
+    PetscCall(KSPRegister(KSPDLKLGMRES, KSPCreate_DLKLGMRES));
 
     PetscCall(PetscOptionsGetInt(NULL, NULL, "-m", &m, NULL));
     PetscCall(PetscOptionsGetInt(NULL, NULL, "-n", &n, NULL));
