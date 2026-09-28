@@ -17,3 +17,5 @@ test_report.log
 tests/results/
 # MOxUnit framework local
 MOxUnit/
+*.o
+test_dlk
