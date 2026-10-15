@@ -6,20 +6,11 @@ Las matrices provienen de la [SuiteSparse Matrix Collection](https://sparse.tamu
 
 ---
 
-## 1. Organización del Directorio
+## 1. Contenido y Archivos
 
-```text
-data/
-├── README.md                     <- Este archivo de documentación
-├── convert_mat_to_bin.py         <- Script para convertir archivos .mat a .bin de PETSc
-├── bin/                          <- Matrices serializadas en formato binario nativo PETSc
-│   ├── add20.bin
-│   ├── cavity05.bin
-│   ├── ...
-│   └── young3c.bin
-├── mat_collection_test/          <- Conjunto inicial de pruebas (.mat)
-└── mat_collection_test_full/     <- Colección completa de matrices de evaluación (.mat)
-```
+* **`bin/`**: Archivos `.bin` en formato binario nativo de PETSc listos para ser consumidos por `test_dlk`.
+* **`convert_mat_to_bin.py`**: Script en Python para serializar las colecciones de matrices `.mat` a formato `.bin`.
+* **`mat_collection_test/` y `mat_collection_test_full/`**: Fuentes originales de matrices en formato `.mat` de MATLAB / SuiteSparse.
 
 ---
 

@@ -2,17 +2,17 @@
 """
 scripts/run_benchmark_comparison.py
 
-Ejecuta el conjunto de pruebas comparativo de solvers Krylov en PETSc sobre una selección
-de matrices representativas de data/bin/:
-- GMRES(30)
-- LGMRES(30, 2)
-- DLK-GMRES (Adaptativo DMDc-LQR)
-- DLK-LGMRES (Adaptativo DMDc-LQR + Augmentation l=2)
-- BiCGStab
+Ejecuta el benchmark de solvers Krylov en PETSc sobre las matrices de la colección SuiteSparse
+(data/bin/) y exporta exactamente los archivos CSV que utiliza el artículo en LaTeX:
+1. results/tables/matrix_info.csv
+2. results/tables/cycles_experiment.csv
+3. results/tables/avg_relativa_time_experiment.csv
 
-Genera:
-1. results/tables/benchmark_comparison.csv (para posterior generación de gráficos de barras)
-2. results/tables/benchmark_comparison.md  (tabla formateada en Markdown)
+Los 4 métodos evaluados son:
+- GMRES (Cycles_GMRES, avg_time_GMRES)
+- LGMRES (Cycles_LGMRES, avg_time_LGMRES)
+- GMRES_DMDc_LQR (Cycles_GMRES_DMDc_LQR, avg_time_GMRES_DMDc_LQR)
+- LGMRES_DMDc_LQR (Cycles_LGMRES_DMDc_LQR, avg_time_LGMRES_DMDc_LQR)
 """
 
 import os
@@ -20,161 +20,192 @@ import sys
 import subprocess
 import csv
 import re
+import argparse
 
-BENCHMARK_MATRICES = [
-    {"name": "sherman5",      "m0": 30, "m_max": 331, "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "sherman1",      "m0": 20, "m_max": 100, "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "sherman4",      "m0": 20, "m_max": 110, "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "watt_1",        "m0": 20, "m_max": 185, "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "orsreg_1",      "m0": 20, "m_max": 220, "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "cdde1",         "m0": 20, "m_max": 96,  "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "steam2",        "m0": 15, "m_max": 60,  "tol": 1e-8, "pc_type": "ilu"},
-    {"name": "cavity05",      "m0": 20, "m_max": 118, "tol": 1e-8, "pc_type": "none"},
-]
+def run_solver(bin_file, solver_type, m0, m_max, tol=1e-8, max_it=10000, pc_type="none", aug_l=2):
+    cmd = ["./test_dlk", "-matrix", bin_file, "-tol", str(tol), "-ksp_max_it", str(max_it), "-pc_type", pc_type]
 
-SOLVER_CONFIGS = [
-    {
-        "id": "GMRES",
-        "label": "GMRES(m)",
-        "cmd_args": lambda m0, m_max: ["-ksp_type", "gmres", "-ksp_gmres_restart", str(m0)]
-    },
-    {
-        "id": "LGMRES",
-        "label": "LGMRES(m,2)",
-        "cmd_args": lambda m0, m_max: ["-ksp_type", "lgmres", "-ksp_lgmres_restart", str(m0), "-ksp_lgmres_augment", "2"]
-    },
-    {
-        "id": "DLK-GMRES",
-        "label": "DLK-GMRES",
-        "cmd_args": lambda m0, m_max: [
+    if solver_type == "GMRES":
+        cmd += ["-ksp_type", "gmres", "-ksp_gmres_restart", str(m0)]
+    elif solver_type == "LGMRES":
+        cmd += ["-ksp_type", "lgmres", "-ksp_lgmres_restart", str(m0), "-ksp_lgmres_augment", str(aug_l)]
+    elif solver_type == "GMRES_DMDc_LQR":
+        cmd += [
             "-ksp_type", "dlk",
             "-ksp_dlk_controller", "lqr",
             "-ksp_dlk_m0", str(m0),
-            "-ksp_dlk_m_min", str(m0 // 2 if m0 > 10 else 5),
+            "-ksp_dlk_m_min", str(max(2, m0 // 2)),
             "-ksp_dlk_m_max", str(m_max),
             "-ksp_dlk_alpha", "0.001"
         ]
-    },
-    {
-        "id": "DLK-LGMRES",
-        "label": "DLK-LGMRES",
-        "cmd_args": lambda m0, m_max: [
+    elif solver_type == "LGMRES_DMDc_LQR":
+        cmd += [
             "-ksp_type", "dlk_lgmres",
             "-ksp_dlk_controller", "lqr",
             "-ksp_dlk_m0", str(m0),
-            "-ksp_dlk_m_min", str(m0 // 2 if m0 > 10 else 5),
+            "-ksp_dlk_m_min", str(max(2, m0 // 2)),
             "-ksp_dlk_m_max", str(m_max),
-            "-ksp_dlk_aug", "2",
+            "-ksp_dlk_aug", str(aug_l),
             "-ksp_dlk_alpha", "0.001"
         ]
-    },
-    {
-        "id": "BiCGStab",
-        "label": "BiCGStab",
-        "cmd_args": lambda m0, m_max: ["-ksp_type", "bcgs"]
-    }
-]
 
-def run_test_dlk(bin_file, extra_args, tol=1e-8, max_it=10000, pc_type="ilu"):
-    cmd = ["./test_dlk", "-matrix", bin_file, "-tol", str(tol), "-ksp_max_it", str(max_it), "-pc_type", pc_type] + extra_args
     try:
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
         output = res.stdout
     except subprocess.TimeoutExpired:
-        return None, None, None, None, "Timeout (>120s)"
-    except Exception as e:
-        return None, None, None, None, f"Error: {e}"
+        return "NC", "NC"
+    except Exception:
+        return "NC", "NC"
 
-    dim_m = re.search(r"Dimensión del Sistema\s*:\s*N\s*=\s*(\d+)", output)
     its_m = re.search(r"Iteraciones Totales\s*:\s*(\d+)", output)
+    cyc_m = re.search(r"Ciclos Totales\s*:\s*(\d+)", output)
     res_m = re.search(r"Residuo \|\|b - Ax\|\|\s*:\s*([0-9.eE+-]+)", output)
     time_m = re.search(r"Tiempo de Ejecución\s*:\s*([0-9.]+)", output)
 
-    dim = int(dim_m.group(1)) if dim_m else 0
     its = int(its_m.group(1)) if its_m else -1
+    cycles = int(cyc_m.group(1)) if cyc_m else -1
     residual = float(res_m.group(1)) if res_m else 1.0
     elapsed = float(time_m.group(1)) if time_m else 0.0
 
-    converged = (its < max_it) and (residual <= tol * 100)
-    status = "Convergió" if converged else "No convergió"
+    # Criterio de convergencia: residuo alcanzado y no superó límite de iteraciones
+    converged = (its < max_it) and (residual <= tol * 50)
+    if not converged or cycles <= 0:
+        return "NC", "NC"
 
-    return dim, its, residual, elapsed, status
+    return cycles, round(elapsed, 5)
 
 def main():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     os.chdir(repo_root)
 
-    out_csv = "results/tables/benchmark_comparison.csv"
-    out_md = "results/tables/benchmark_comparison.md"
-    os.makedirs("results/tables", exist_ok=True)
+    matrix_info_path = "results/tables/matrix_info.csv"
+    cycles_csv_path = "results/tables/cycles_experiment.csv"
+    time_csv_path = "results/tables/avg_relativa_time_experiment.csv"
 
-    print("=" * 100)
-    print(" BENCHMARK COMPARATIVO DE SOLVERS KRYLOV (DLK vs NATIVOS PETSc)")
-    print("=" * 100)
-    print(f"{'Matriz':<12} | {'Solver':<12} | {'N':<7} | {'Iter':<7} | {'Tiempo (s)':<11} | {'Residuo':<14} | {'Estado'}")
-    print("-" * 100)
+    parser = argparse.ArgumentParser(description="Ejecutar benchmark comparativo para artículo LaTeX")
+    parser.add_argument('--problems', type=str, default="", help="Lista de números de problema separados por comas (ej. 1,4,15,16,17,18,22)")
+    parser.add_argument('--all', action='store_true', help="Ejecutar todos los 22 problemas")
+    args = parser.parse_args()
 
-    rows = []
+    # Cargar información de matrices
+    problems = []
+    with open(matrix_info_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            problems.append({
+                "Problem": int(row["Problem"]),
+                "Matrix": row["Matrix"],
+                "n": int(row["n"]),
+                "nnz": int(row["nnz"]),
+                "cond_A": row["cond_A"]
+            })
 
-    for mat_info in BENCHMARK_MATRICES:
-        mat_name = mat_info["name"]
-        bin_path = f"data/bin/{mat_name}.bin"
-        if not os.path.exists(bin_path):
-            print(f"[Aviso] Matriz {bin_path} no encontrada, omitiendo.")
+    # Cargar resultados previos si existen
+    cycles_data = {}
+    time_data = {}
+    if os.path.exists(cycles_csv_path):
+        with open(cycles_csv_path, 'r') as f:
+            for row in csv.DictReader(f):
+                cycles_data[int(row["Problem"])] = row
+    if os.path.exists(time_csv_path):
+        with open(time_csv_path, 'r') as f:
+            for row in csv.DictReader(f):
+                time_data[int(row["Problem"])] = row
+
+    # Determinar qué problemas ejecutar
+    selected_probs = set()
+    if args.all:
+        selected_probs = set(p["Problem"] for p in problems)
+    elif args.problems:
+        selected_probs = set(int(x.strip()) for x in args.problems.split(","))
+    else:
+        # Por defecto ejecutar conjunto representativo si no se especifica
+        selected_probs = {4, 15, 16, 17, 18, 22}
+
+    print("=" * 110)
+    print(" BENCHMARK SUITESPARSE PETSc (Formato de Tablas LaTeX)")
+    print("=" * 110)
+    print(f"{'#':<3} | {'Matriz':<14} | {'N':<6} | {'Cycles GMRES':<13} | {'Cycles LGMRES':<14} | {'Cycles DLK':<11} | {'Cycles DLK-L':<13} | {'Tiempo DLK (s)'}")
+    print("-" * 110)
+
+    for p in problems:
+        pid = p["Problem"]
+        mat_name = p["Matrix"]
+        n = p["n"]
+
+        if pid not in selected_probs and pid in cycles_data and pid in time_data:
+            # Preservar datos existentes
+            c_row = cycles_data[pid]
+            t_row = time_data[pid]
+            print(f"{pid:<3} | {mat_name:<14} | {n:<6} | {c_row['Cycles_GMRES']:<13} | {c_row['Cycles_LGMRES']:<14} | {c_row['Cycles_GMRES_DMDc_LQR']:<11} | {c_row['Cycles_LGMRES_DMDc_LQR']:<13} | {t_row['avg_time_GMRES_DMDc_LQR']} (previo)")
             continue
 
-        m0 = mat_info["m0"]
-        m_max = mat_info["m_max"]
-        tol = mat_info["tol"]
-        pc_type = mat_info.get("pc_type", "ilu")
+        bin_path = f"data/bin/{mat_name}.bin"
+        if not os.path.exists(bin_path):
+            print(f"[Aviso] No existe {bin_path}, omitiendo problema {pid}.")
+            continue
 
-        for sc in SOLVER_CONFIGS:
-            args = sc["cmd_args"](m0, m_max)
-            dim, its, residual, elapsed, status = run_test_dlk(bin_path, args, tol=tol, pc_type=pc_type)
+        m0 = min(30, max(10, int(round(0.10 * n))))
+        m_max = min(n, max(30, int(round(0.10 * n))))
+        tol = 1e-8
 
-            row = {
-                "Matrix": mat_name,
-                "Dimension_N": dim if dim else 0,
-                "Solver_ID": sc["id"],
-                "Solver_Label": sc["label"],
-                "Iterations": its if its is not None else -1,
-                "Time_sec": elapsed if elapsed is not None else -1.0,
-                "Residual": residual if residual is not None else -1.0,
-                "Tolerance": tol,
-                "Status": status
-            }
-            rows.append(row)
+        # sherman5 requiere m_max = 331 y tol = 1e-9 sin precondicionador
+        if mat_name == "sherman5":
+            m0 = 30
+            m_max = 331
+            tol = 1e-9
 
-            its_str = str(its) if its >= 0 else "N/A"
-            time_str = f"{elapsed:.4f}" if elapsed >= 0 else "N/A"
-            res_str = f"{residual:.2e}" if residual >= 0 else "N/A"
+        # Ejecutar los 4 métodos
+        c_gmres, t_gmres = run_solver(bin_path, "GMRES", m0, m_max, tol=tol)
+        c_lgmres, t_lgmres = run_solver(bin_path, "LGMRES", m0, m_max, tol=tol, aug_l=2)
+        c_dlk, t_dlk = run_solver(bin_path, "GMRES_DMDc_LQR", m0, m_max, tol=tol)
+        c_dlkl, t_dlkl = run_solver(bin_path, "LGMRES_DMDc_LQR", m0, m_max, tol=tol, aug_l=2)
 
-            print(f"{mat_name:<12} | {sc['id']:<12} | {dim:<7} | {its_str:<7} | {time_str:<11} | {res_str:<14} | {status}")
+        cycles_data[pid] = {
+            "Problem": pid,
+            "Matrix": mat_name,
+            "Cycles_GMRES": c_gmres,
+            "Cycles_LGMRES": c_lgmres,
+            "Cycles_GMRES_DMDc_LQR": c_dlk,
+            "Cycles_LGMRES_DMDc_LQR": c_dlkl
+        }
 
-    # Guardar CSV
-    fieldnames = ["Matrix", "Dimension_N", "Solver_ID", "Solver_Label", "Iterations", "Time_sec", "Residual", "Tolerance", "Status"]
-    with open(out_csv, "w", newline="") as f:
+        time_data[pid] = {
+            "Problem": pid,
+            "Matrix": mat_name,
+            "avg_time_GMRES": t_gmres,
+            "avg_time_LGMRES": t_lgmres,
+            "avg_time_GMRES_DMDc_LQR": t_dlk,
+            "avg_time_LGMRES_DMDc_LQR": t_dlkl
+        }
+
+        print(f"{pid:<3} | {mat_name:<14} | {n:<6} | {str(c_gmres):<13} | {str(c_lgmres):<14} | {str(c_dlk):<11} | {str(c_dlkl):<13} | {str(t_dlk)}")
+
+    # Guardar cycles_experiment.csv
+    with open(cycles_csv_path, 'w', newline='') as f:
+        fieldnames = ["Problem", "Matrix", "Cycles_GMRES", "Cycles_LGMRES", "Cycles_GMRES_DMDc_LQR", "Cycles_LGMRES_DMDc_LQR"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        for p in problems:
+            pid = p["Problem"]
+            if pid in cycles_data:
+                writer.writerow(cycles_data[pid])
 
-    # Guardar Markdown
-    with open(out_md, "w") as f:
-        f.write("# Tabla Comparativa de Rendimiento (PETSc Benchmark)\n\n")
-        f.write("Resultados obtenidos ejecutando solvers Krylov en sistemas lineales SuiteSparse:\n\n")
-        f.write(r"| Matriz | Dimensión ($N$) | Solver | Iteraciones | Tiempo (s) | Residuo $\|b-Ax\|$ | Estado |" + "\n")
-        f.write("| :--- | :---: | :--- | :---: | :---: | :---: | :--- |\n")
-        for r in rows:
-            its_str = str(r['Iterations']) if r['Iterations'] >= 0 else "N/A"
-            time_str = f"{r['Time_sec']:.4f}" if r['Time_sec'] >= 0 else "N/A"
-            res_str = f"{r['Residual']:.2e}" if r['Residual'] >= 0 else "N/A"
-            f.write(f"| `{r['Matrix']}` | {r['Dimension_N']} | **{r['Solver_Label']}** | {its_str} | {time_str} | {res_str} | {r['Status']} |\n")
+    # Guardar avg_relativa_time_experiment.csv
+    with open(time_csv_path, 'w', newline='') as f:
+        fieldnames = ["Problem", "Matrix", "avg_time_GMRES", "avg_time_LGMRES", "avg_time_GMRES_DMDc_LQR", "avg_time_LGMRES_DMDc_LQR"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for p in problems:
+            pid = p["Problem"]
+            if pid in time_data:
+                writer.writerow(time_data[pid])
 
-    print("-" * 100)
-    print(f"[✓] Benchmark finalizado exitosamente.")
-    print(f"    CSV: {out_csv}")
-    print(f"    Markdown: {out_md}")
-    print("=" * 100)
+    print("-" * 110)
+    print(f"[✓] Tablas actualizadas exitosamente:")
+    print(f"    - {cycles_csv_path}")
+    print(f"    - {time_csv_path}")
+    print("=" * 110)
 
 if __name__ == "__main__":
     main()

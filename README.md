@@ -33,39 +33,13 @@ El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la varian
 
 ---
 
-## 2. Arquitectura del Repositorio
+## 2. Componentes del Repositorio
 
-El proyecto sigue una arquitectura desacoplada y ordenada:
-
-```text
-DLK-rest/
-├── README.md                      <- Documentación general del proyecto
-├── Makefile                       <- Build system compatible con variables de entorno PETSc
-├── include/                       <- Encabezados públicos e internos en C
-│   ├── petsckspdlk.h              <- API pública de PETSc para KSPDLK y KSPDLKLGMRES
-│   ├── kspdlkimpl.h               <- Estructuras internas de datos del solver KSP
-│   └── dmdc_lqr.h                 <- Rutinas de álgebra lineal, SVD y CARE (Riccati)
-├── src/                           <- Implementación del núcleo computacional
-│   ├── kspdlk.c                   <- Ciclo de vida PETSc (Create, SetUp, Solve, Destroy)
-│   └── dmdc_lqr.c                 <- Identificación DMDc y controlador LQR en C/LAPACK
-├── data/                          <- Conjunto de matrices dispersas de prueba
-│   ├── README.md                  <- Documentación detallada del dataset y formatos
-│   ├── convert_mat_to_bin.py      <- Script para serializar .mat a .bin de PETSc
-│   ├── bin/                       <- 22 matrices en formato binario PETSc (.bin)
-│   ├── mat_collection_test/       <- Conjunto básico de matrices (.mat)
-│   └── mat_collection_test_full/  <- Colección completa SuiteSparse (.mat)
-├── scripts/                       <- Herramientas de benchmark y visualización para publicación
-│   ├── run_benchmark_comparison.py<- Ejecución automatizada de la suite sobre matrices
-│   ├── plot_benchmark_bars.py     <- Gráficos de barras comparativos (Iteraciones y Tiempo)
-│   ├── plot_comparison_of_methods.py <- Curvas comparativas de convergencia estilo SIAM
-│   └── plot_performance_with_m.py <- Curvas de rendimiento en 3 paneles (Residuo, Error DMDc, m)
-├── tests/                         <- Drivers de prueba y scripts de validación
-│   └── test_dlk.c                 <- Programa principal de ejecución y benchmark
-└── results/                       <- Resultados experimentales y figuras
-    ├── README.md                  <- Guía de ejecución con cualquier matriz y detalles CLI
-    ├── figures/                   <- Figuras para publicación en formato PNG (300 DPI) y EPS
-    └── tables/                    <- Tablas comparativas en formato CSV y Markdown
-```
+* **`src/` e `include/`**: Implementación nativa del solver KSP (`kspdlk.c`), rutinas de identificación DMDc y solución de Riccati (CARE) en C (`dmdc_lqr.c`), y encabezados públicos de PETSc (`petsckspdlk.h`).
+* **`data/`**: Colección de 22 matrices SuiteSparse y sus binarios optimizados en `data/bin/`, junto con el script de conversión `convert_mat_to_bin.py`.
+* **`scripts/`**: Automatización del benchmark comparativo (`run_benchmark_comparison.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
+* **`tests/`**: Driver de validación y benchmarking `test_dlk.c`.
+* **`results/`**: Tablas experimentales en `results/tables/` (`matrix_info.csv`, `cycles_experiment.csv`, `avg_relativa_time_experiment.csv`) y figuras vectoriales en `results/figures/`.
 
 ---
 

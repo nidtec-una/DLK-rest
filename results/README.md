@@ -4,23 +4,17 @@ Este directorio contiene los resultados experimentales, figuras para publicació
 
 ---
 
-## 1. Organización del Directorio
+## 1. Contenido y Archivos
 
-```text
-results/
-├── README.md                      <- Este documento de referencia y guía de ejecución
-├── figures/                       <- Gráficas de publicación en alta resolución (PNG 300 DPI y EPS vectorial)
-│   ├── benchmark_bars_iterations.png / .eps  <- Gráfico de barras comparativo de iteraciones
-│   ├── benchmark_bars_time.png / .eps        <- Gráfico de barras comparativo de tiempo de CPU
-│   ├── Comparisonofmethodssherman5.png / .eps<- Curvas de convergencia de métodos (estilo SIAM)
-│   ├── PerformanceofDMDcLQRGMRESmsherman5_with_m.png / .eps <- Rendimiento en 3 paneles (Residuo, Error DMDc, m)
-│   └── ...
-└── tables/                        <- Datos tabulares en formato CSV y Markdown
-    ├── benchmark_comparison.csv   <- Tabla de rendimiento entre solvers en toda la suite
-    ├── benchmark_comparison.md    <- Resumen formateado en Markdown
-    ├── cycles_sherman5_dlk.csv    <- Trayectoria de ciclos, residuo, error DMDc y m
-    └── ...
-```
+* **`figures/`**: Figuras para publicación en alta resolución (PNG 300 DPI y EPS vectorial):
+  * `bar_plot_Number_of_cycles.eps` / `.png`: Gráfico de barras comparativo de ciclos.
+  * `bar_plot_Average_computation_relative_time.eps` / `.png`: Gráfico de barras comparativo de tiempos de cómputo relativos a GMRES.
+  * `Comparisonofmethodssherman5.eps` / `.png`: Curvas comparativas de convergencia estilo SIAM.
+  * `PerformanceofDMDcLQRGMRESmsherman5_with_m.eps` / `.png`: Rendimiento multietapa en 3 paneles.
+* **`tables/`**: Tablas en formato CSV y Markdown con la estructura requerida por el artículo en LaTeX:
+  * `matrix_info.csv`: Información estructural y número de condición de las 22 matrices.
+  * `cycles_experiment.csv`: Número de ciclos de reinicio para cada problema y método (`GMRES`, `LGMRES`, `DMDc-LQR-GMRES`, `DMDc-LQR-LGMRES`).
+  * `avg_relativa_time_experiment.csv`: Tiempo computacional promedio para cada problema y método.
 
 ---
 

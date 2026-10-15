@@ -2,10 +2,11 @@
 """
 scripts/plot_benchmark_bars.py
 
-Lee results/tables/benchmark_comparison.csv y genera gráficos de barras comparativos
-para publicaciones (estilo SIAM / IEEE):
-1. results/figures/benchmark_bars_iterations.png / .eps (Iteraciones por solver y matriz)
-2. results/figures/benchmark_bars_time.png / .eps (Tiempo de CPU en segundos)
+Genera los gráficos de barras comparativos para el artículo en LaTeX:
+1. results/figures/bar_plot_Number_of_cycles.png y .eps
+   (Número de ciclos para cada problema y método, a partir de results/tables/cycles_experiment.csv)
+2. results/figures/bar_plot_Average_computation_relative_time.png y .eps
+   (Tiempo computacional promedio relativo a GMRES, a partir de results/tables/avg_relativa_time_experiment.csv)
 """
 
 import os
@@ -15,107 +16,181 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-def plot_benchmark_bars(csv_path="results/tables/benchmark_comparison.csv",
-                        output_dir="results/figures"):
-    os.makedirs(output_dir, exist_ok=True)
-    
+def plot_number_of_cycles(csv_path="results/tables/cycles_experiment.csv",
+                          output_prefix="results/figures/bar_plot_Number_of_cycles"):
     if not os.path.exists(csv_path):
-        print(f"[Error] No se encontró el archivo {csv_path}")
+        print(f"[Aviso] No se encontró {csv_path}")
         return
 
-    # Leer datos del CSV
-    data = {}
-    solvers = []
+    problems = []
+    matrix_names = []
+    c_gmres = []
+    c_lgmres = []
+    c_dlk = []
+    c_dlkl = []
+
     with open(csv_path, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            mat = row["Matrix"]
-            s_label = row["Solver_Label"]
-            its = int(row["Iterations"])
-            t_sec = float(row["Time_sec"])
-            
-            if s_label not in solvers:
-                solvers.append(s_label)
-                
-            if mat not in data:
-                data[mat] = {}
-            data[mat][s_label] = {"iterations": its, "time": t_sec}
+            problems.append(int(row["Problem"]))
+            matrix_names.append(row["Matrix"])
 
-    matrices = list(data.keys())
-    num_mats = len(matrices)
-    num_solvers = len(solvers)
-    
-    if num_mats == 0 or num_solvers == 0:
-        print("[Error] No hay datos suficientes en el CSV para graficar.")
+            def parse_val(v):
+                if v == "NC" or v == "" or v is None:
+                    return np.nan
+                try:
+                    return float(v)
+                except ValueError:
+                    return np.nan
+
+            c_gmres.append(parse_val(row.get("Cycles_GMRES")))
+            c_lgmres.append(parse_val(row.get("Cycles_LGMRES")))
+            c_dlk.append(parse_val(row.get("Cycles_GMRES_DMDc_LQR")))
+            c_dlkl.append(parse_val(row.get("Cycles_LGMRES_DMDc_LQR")))
+
+    n_probs = len(problems)
+    x = np.arange(n_probs)
+    width = 0.20
+
+    # Tamaño estilo SIAM / IEEE: ancho ~7.0 in, alto ~3.8 in
+    fig, ax = plt.subplots(figsize=(7.5, 3.8))
+    fig.patch.set_facecolor('white')
+
+    # Paleta editorial sobria para publicación
+    # GMRES (gris claro), LGMRES (gris medio), DMDc-GMRES (azul petróleo), DMDc-LGMRES (verde oscuro)
+    color_gmres = '#b0b0b0'
+    color_lgmres = '#6e6e6e'
+    color_dlk = '#1f77b4'
+    color_dlkl = '#2ca02c'
+
+    # Reemplazar NaN con 0 para plotting sin romper la escala log
+    def clean_for_log(arr):
+        return [val if (not np.isnan(val) and val > 0) else 0.001 for val in arr]
+
+    b1 = ax.bar(x - 1.5 * width, clean_log(c_gmres), width, label=r'GMRES($m$)', color=color_gmres, edgecolor='black', linewidth=0.5)
+    b2 = ax.bar(x - 0.5 * width, clean_log(c_lgmres), width, label=r'LGMRES($m,\ell$)', color=color_lgmres, edgecolor='black', linewidth=0.5)
+    b3 = ax.bar(x + 0.5 * width, clean_log(c_dlk), width, label=r'DMDc-LQR-GMRES($m$)', color=color_dlk, edgecolor='black', linewidth=0.5)
+    b4 = ax.bar(x + 1.5 * width, clean_log(c_dlkl), width, label=r'DMDc-LQR-LGMRES($m,\ell$)', color=color_dlkl, edgecolor='black', linewidth=0.5)
+
+    ax.set_ylabel('Number of cycles (log scale)', fontsize=10, fontweight='semibold')
+    ax.set_xlabel('Problem Number', fontsize=10, fontweight='semibold')
+    ax.set_yscale('log')
+    ax.set_ylim([0.8, 2000])
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(p) for p in problems], fontsize=9)
+    ax.grid(axis='y', which='both', linestyle=':', linewidth=0.5, alpha=0.6)
+    ax.legend(frameon=True, fontsize=8.5, loc='upper right', ncol=2)
+    ax.tick_params(direction='in', top=True, right=True, which='both')
+
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(os.path.abspath(output_prefix)), exist_ok=True)
+    png_path = f"{output_prefix}.png"
+    eps_path = f"{output_prefix}.eps"
+    plt.savefig(png_path, dpi=300, bbox_inches='tight')
+    plt.savefig(eps_path, format='eps', bbox_inches='tight')
+    plt.close()
+    print(f"[✓] Gráfico de ciclos guardado:\n    {png_path}\n    {eps_path}")
+
+def clean_log(arr):
+    return [val if (not np.isnan(val) and val > 0) else 0.001 for val in arr]
+
+def plot_relative_time(csv_path="results/tables/avg_relativa_time_experiment.csv",
+                       output_prefix="results/figures/bar_plot_Average_computation_relative_time"):
+    if not os.path.exists(csv_path):
+        print(f"[Aviso] No se encontró {csv_path}")
         return
 
-    # Configuración de colores y estilos profesionales (paleta editorial SIAM / IEEE)
-    colors = ['#7f7f7f', '#3b528b', '#21918c', '#5ec962', '#e41a1c']
-    if len(solvers) > len(colors):
-        colors = plt.cm.tab10(np.linspace(0, 1, len(solvers)))
+    problems = []
+    matrix_names = []
+    t_gmres = []
+    t_lgmres = []
+    t_dlk = []
+    t_dlkl = []
 
-    x = np.arange(num_mats)
-    bar_width = 0.8 / num_solvers
+    with open(csv_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            problems.append(int(row["Problem"]))
+            matrix_names.append(row["Matrix"])
 
-    # -------------------------------------------------------------
-    # 1. Gráfico de Barras: Iteraciones Totales (Escala Logarítmica)
-    # -------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8.0, 4.5))
+            def parse_val(v):
+                if v == "NC" or v == "" or v is None:
+                    return np.nan
+                try:
+                    return float(v)
+                except ValueError:
+                    return np.nan
+
+            t_gmres.append(parse_val(row.get("avg_time_GMRES")))
+            t_lgmres.append(parse_val(row.get("avg_time_LGMRES")))
+            t_dlk.append(parse_val(row.get("avg_time_GMRES_DMDc_LQR")))
+            t_dlkl.append(parse_val(row.get("avg_time_LGMRES_DMDc_LQR")))
+
+    n_probs = len(problems)
+    x = np.arange(n_probs)
+    width = 0.20
+
+    # Calcular tiempos relativos respecto a GMRES(m) si GMRES convergió
+    rel_gmres = []
+    rel_lgmres = []
+    rel_dlk = []
+    rel_dlkl = []
+
+    for i in range(n_probs):
+        tg = t_gmres[i]
+        tl = t_lgmres[i]
+        td = t_dlk[i]
+        tdl = t_dlkl[i]
+
+        if not np.isnan(tg) and tg > 0:
+            rel_gmres.append(1.0)
+            rel_lgmres.append(tl / tg if not np.isnan(tl) else np.nan)
+            rel_dlk.append(td / tg if not np.isnan(td) else np.nan)
+            rel_dlkl.append(tdl / tg if not np.isnan(tdl) else np.nan)
+        else:
+            # Si GMRES no convergió, tomar como base el valor absoluto o normalizado al mínimo
+            rel_gmres.append(np.nan)
+            rel_lgmres.append(tl if not np.isnan(tl) else np.nan)
+            rel_dlk.append(td if not np.isnan(td) else np.nan)
+            rel_dlkl.append(tdl if not np.isnan(tdl) else np.nan)
+
+    fig, ax = plt.subplots(figsize=(7.5, 3.8))
     fig.patch.set_facecolor('white')
 
-    for i, s_label in enumerate(solvers):
-        its_vals = [max(1, data[m].get(s_label, {}).get("iterations", 0)) for m in matrices]
-        pos = x - 0.4 + (i + 0.5) * bar_width
-        ax.bar(pos, its_vals, width=bar_width, label=s_label, color=colors[i % len(colors)],
-               edgecolor='black', linewidth=0.6, alpha=0.9)
+    color_gmres = '#b0b0b0'
+    color_lgmres = '#6e6e6e'
+    color_dlk = '#1f77b4'
+    color_dlkl = '#2ca02c'
 
-    ax.set_ylabel("Iteraciones Totales (escala log)", fontsize=11, fontweight='semibold')
-    ax.set_title("Comparación de Iteraciones de Solvers Krylov en PETSc", fontsize=12, pad=10)
-    ax.set_xticks(x)
-    ax.set_xticklabels(matrices, fontsize=10, rotation=25, ha='right')
+    b1 = ax.bar(x - 1.5 * width, clean_log(rel_gmres), width, label=r'GMRES($m$)', color=color_gmres, edgecolor='black', linewidth=0.5)
+    b2 = ax.bar(x - 0.5 * width, clean_log(rel_lgmres), width, label=r'LGMRES($m,\ell$)', color=color_lgmres, edgecolor='black', linewidth=0.5)
+    b3 = ax.bar(x + 0.5 * width, clean_log(rel_dlk), width, label=r'DMDc-LQR-GMRES($m$)', color=color_dlk, edgecolor='black', linewidth=0.5)
+    b4 = ax.bar(x + 1.5 * width, clean_log(rel_dlkl), width, label=r'DMDc-LQR-LGMRES($m,\ell$)', color=color_dlkl, edgecolor='black', linewidth=0.5)
+
+    ax.set_ylabel('Relative Time (normalized to GMRES)', fontsize=10, fontweight='semibold')
+    ax.set_xlabel('Problem Number', fontsize=10, fontweight='semibold')
     ax.set_yscale('log')
-    ax.grid(axis='y', linestyle=':', alpha=0.7)
-    ax.legend(frameon=True, fontsize=9, loc='upper right', ncol=min(3, num_solvers))
+    ax.set_ylim([0.01, 50])
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(p) for p in problems], fontsize=9)
+    ax.grid(axis='y', which='both', linestyle=':', linewidth=0.5, alpha=0.6)
+    ax.legend(frameon=True, fontsize=8.5, loc='upper right', ncol=2)
     ax.tick_params(direction='in', top=True, right=True, which='both')
 
     plt.tight_layout()
-    fig_iter_png = os.path.join(output_dir, "benchmark_bars_iterations.png")
-    fig_iter_eps = os.path.join(output_dir, "benchmark_bars_iterations.eps")
-    plt.savefig(fig_iter_png, dpi=300, bbox_inches='tight')
-    plt.savefig(fig_iter_eps, format='eps', bbox_inches='tight')
+    os.makedirs(os.path.dirname(os.path.abspath(output_prefix)), exist_ok=True)
+    png_path = f"{output_prefix}.png"
+    eps_path = f"{output_prefix}.eps"
+    plt.savefig(png_path, dpi=300, bbox_inches='tight')
+    plt.savefig(eps_path, format='eps', bbox_inches='tight')
     plt.close()
+    print(f"[✓] Gráfico de tiempos relativos guardado:\n    {png_path}\n    {eps_path}")
 
-    # -------------------------------------------------------------
-    # 2. Gráfico de Barras: Tiempo de Ejecución (Segundos)
-    # -------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8.0, 4.5))
-    fig.patch.set_facecolor('white')
+def main():
+    plot_number_of_cycles()
+    plot_relative_time()
 
-    for i, s_label in enumerate(solvers):
-        time_vals = [max(1e-4, data[m].get(s_label, {}).get("time", 0.0)) for m in matrices]
-        pos = x - 0.4 + (i + 0.5) * bar_width
-        ax.bar(pos, time_vals, width=bar_width, label=s_label, color=colors[i % len(colors)],
-               edgecolor='black', linewidth=0.6, alpha=0.9)
-
-    ax.set_ylabel("Tiempo de Ejecución [s] (escala log)", fontsize=11, fontweight='semibold')
-    ax.set_title("Comparación de Tiempo de Cómputo en PETSc", fontsize=12, pad=10)
-    ax.set_xticks(x)
-    ax.set_xticklabels(matrices, fontsize=10, rotation=25, ha='right')
-    ax.set_yscale('log')
-    ax.grid(axis='y', linestyle=':', alpha=0.7)
-    ax.legend(frameon=True, fontsize=9, loc='upper right', ncol=min(3, num_solvers))
-    ax.tick_params(direction='in', top=True, right=True, which='both')
-
-    plt.tight_layout()
-    fig_time_png = os.path.join(output_dir, "benchmark_bars_time.png")
-    fig_time_eps = os.path.join(output_dir, "benchmark_bars_time.eps")
-    plt.savefig(fig_time_png, dpi=300, bbox_inches='tight')
-    plt.savefig(fig_time_eps, format='eps', bbox_inches='tight')
-    plt.close()
-
-    print("[✓] Gráficos de barras comparativos generados exitosamente:")
-    print(f"    - Iteraciones: {fig_iter_png} y {fig_iter_eps}")
-    print(f"    - Tiempo:      {fig_time_png} y {fig_time_eps}")
-
-if __name__ == "__main__":
-    plot_benchmark_bars()
+if __name__ == '__main__':
+    main()

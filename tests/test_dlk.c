@@ -124,10 +124,24 @@ int main(int argc, char **argv)
     PetscCall(KSPGetIterationNumber(ksp, &its));
     PetscCall(KSPGetType(ksp, &type));
 
+    PetscInt  num_cycles = 0;
+    PetscBool is_dlk = PETSC_FALSE, is_dlk_lgmres = PETSC_FALSE;
+    PetscCall(PetscStrcmp(type, KSPDLK, &is_dlk));
+    PetscCall(PetscStrcmp(type, KSPDLKLGMRES, &is_dlk_lgmres));
+    if (is_dlk || is_dlk_lgmres) {
+        PetscCall(KSPDLKGetCycleHistory(ksp, &num_cycles, NULL, NULL, NULL));
+    } else {
+        PetscInt restart_m = 30;
+        PetscCall(PetscOptionsGetInt(NULL, NULL, "-ksp_gmres_restart", &restart_m, NULL));
+        PetscCall(PetscOptionsGetInt(NULL, NULL, "-ksp_lgmres_restart", &restart_m, NULL));
+        if (restart_m > 0) num_cycles = (its + restart_m - 1) / restart_m;
+    }
+
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, "\n==================== REPORTE DE EJECUCIÓN KSP ====================\n"));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Dimensión del Sistema : N = %d\n", total_N));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Tipo de Solver (KSP)  : %s\n", type));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Iteraciones Totales   : %d\n", its));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Ciclos Totales        : %d\n", num_cycles));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Residuo ||b - Ax||    : %1.4e\n", (double)norm));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Tiempo de Ejecución   : %f segundos\n", t2 - t1));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD, "==================================================================\n\n"));
