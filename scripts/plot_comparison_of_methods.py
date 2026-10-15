@@ -40,9 +40,9 @@ def find_csv(filename):
             return c
     return os.path.join("results/tables", filename)
 
-def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman4",
-                    matrix="sherman4",
-                    title_label="sherman4",
+def plot_comparison(output_prefix="results/figures/Comparisonofmethodsorsirr1",
+                    matrix="orsirr1",
+                    title_label="orsirr1",
                     tol=1e-9):
     # Configuración de tamaño de figura SIAM: ~13 x 10 cm (5.12 x 3.94 pulgadas)
     fig, ax = plt.subplots(figsize=(5.5, 4.2))
@@ -136,10 +136,10 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman4",
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Graficar comparación de métodos Krylov estilo SIAM")
-    parser.add_argument('--matrix', type=str, default="sherman4", help="Nombre de la matriz")
-    parser.add_argument('--output_prefix', type=str, default="results/figures/Comparisonofmethodssherman4",
+    parser.add_argument('--matrix', type=str, default="orsirr1", help="Nombre de la matriz")
+    parser.add_argument('--output_prefix', type=str, default="results/figures/Comparisonofmethodsorsirr1",
                         help="Prefijo para archivos PNG y EPS")
-    parser.add_argument('--title', type=str, default="sherman4", help="Etiqueta del problema")
+    parser.add_argument('--title', type=str, default="orsirr1", help="Etiqueta del problema")
     parser.add_argument('--tol', type=float, default=1e-9, help="Tolerancia del residuo")
     args = parser.parse_args()
 

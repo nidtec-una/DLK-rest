@@ -37,7 +37,7 @@ El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la varian
 
 * **`src/` e `include/`**: Implementación nativa del solver KSP (`kspdlk.c`), rutinas de identificación DMDc y solución de Riccati (CARE) en C (`dmdc_lqr.c`), y encabezados públicos de PETSc (`petsckspdlk.h`).
 * **`data/`**: Colección de 22 matrices SuiteSparse y sus binarios optimizados en `data/bin/`, junto con el script de conversión `convert_mat_to_bin.py`.
-* **`scripts/`**: Automatización del benchmark comparativo (`run_all_22_benchmark.py`), driver de prueba de `sherman4` (`run_sherman4_experiment.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
+* **`scripts/`**: Automatización del benchmark comparativo (`run_all_22_benchmark.py`), driver de prueba de `orsirr1` (`run_orsirr1_experiment.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
 * **`tests/`**: Driver de validación y benchmarking `test_dlk.c`.
 * **`results/`**: Tablas experimentales en `results/tables/` (`matrix_info.csv`, `cycles_experiment.csv`, `avg_relativa_time_experiment.csv`) y figuras vectoriales en `results/figures/`.
 
@@ -89,29 +89,29 @@ Los solvers se integran de forma nativa en el sistema de opciones de PETSc media
 
 ## 5. Ejemplos de Ejecución Rápida
 
-### A. Ejecutar Sherman4 con DLK-GMRES Adaptativo (Sin Precondicionador)
+### A. Ejecutar Orsirr1 con DLK-GMRES Adaptativo (Sin Precondicionador)
 ```bash
-./test_dlk -matrix data/bin/sherman4.bin \
+./test_dlk -matrix data/bin/orsirr1.bin \
            -ksp_type dlk \
            -ksp_dlk_controller lqr \
            -ksp_dlk_m0 30 \
            -ksp_dlk_m_min 2 \
-           -ksp_dlk_m_max 110 \
+           -ksp_dlk_m_max 103 \
            -ksp_dlk_alpha 0.0001 \
            -pc_type none \
            -tol 1e-9 \
-           -cycle_file results/tables/cycles_sherman4_dlk.csv
+           -cycle_file results/tables/cycles_orsirr1_dlk.csv
 ```
 
-### B. Ejecutar Sherman4 con LGMRES(28, 2) de Referencia
+### B. Ejecutar Orsirr1 con LGMRES(28, 2) de Referencia
 ```bash
-./test_dlk -matrix data/bin/sherman4.bin \
+./test_dlk -matrix data/bin/orsirr1.bin \
            -ksp_type lgmres \
            -ksp_lgmres_restart 28 \
            -ksp_lgmres_augment 2 \
            -pc_type none \
            -tol 1e-9 \
-           -cycle_file results/tables/cycles_sherman4_lgmres28.csv
+           -cycle_file results/tables/cycles_orsirr1_lgmres28.csv
 ```
 
 ### C. Ejecutar en Paralelo con MPI (4 procesos)
@@ -221,15 +221,15 @@ Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/c
 #### Reducción en Tiempo Computacional Relativo
 ![Relative Computation Time](results/figures/bar_plot_Average_computation_relative_time.png)
 
-### B. Curvas de Convergencia Estilo SIAM (`sherman4`)
+### B. Curvas de Convergencia Estilo SIAM (`orsirr1`)
 Generada con `python3 scripts/plot_comparison_of_methods.py`:
 
-![Comparison of Methods sherman4](results/figures/Comparisonofmethodssherman4.png)
+![Comparison of Methods orsirr1](results/figures/Comparisonofmethodsorsirr1.png)
 
-### C. Rendimiento Multietapa y Dinámica de $m$ (`sherman4`)
+### C. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
 Generada con `python3 scripts/plot_performance_with_m.py`:
 
-![Performance DLK-GMRES sherman4](results/figures/PerformanceofDMDcLQRGMRESmsherman4_with_m.png)
+![Performance DLK-GMRES orsirr1](results/figures/PerformanceofDMDcLQRGMRESmorsirr1_with_m.png)
 
 ---
 
@@ -257,14 +257,14 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 ### E. Serialización y Preservación de Lado Derecho ($b$)
 * **Dataset SuiteSparse:** En los archivos `.mat` originales, ciertas matrices disponían de un vector $b$ explícito mientras que en otras se generaba $b = \mathbf{1}$. El conversor de PETSc ([`data/convert_mat_to_bin.py`](file:///home/carlos_benitez/DLK-rest/data/convert_mat_to_bin.py)) detecta y preserva rigurosamente el vector $b$ original o sintetiza el vector unitario, empaquetándolos en formato binario nativo de PETSc (`PetscViewerBinary`) para evitar diferencias en la escala inicial del residuo $\|r_0\|$.
 
-### F. Caso de Estudio `sherman4`: Validación Experimental y Dinámica Adaptativa DLK-GMRES
+### F. Caso de Estudio `orsirr1`: Validación Experimental y Dinámica Adaptativa del Controlador DLK
 * **Comportamiento Comparativo:**
-  La matriz `sherman4` ($N = 1,104$, $nnz = 3,786$, $\text{cond}(A) = 7.1579 \times 10^3$) ilustra con nitidez la superioridad del modelado dinámico y control óptimo de reinicio:
-  - **GMRES(30):** Requiere **26 ciclos** (757 iteraciones internas de Arnoldi) para alcanzar la tolerancia $\|r_k\|/\|r_0\| \le 10^{-9}$.
-  - **LGMRES(28, 2):** Con 2 vectores de enriquecimiento, converge en **16 ciclos** (446 iteraciones).
-  - **DMDc–LQR–GMRES:** A partir de los snapshots del residuo, identifica la dinámica del sistema y adapta $m$ estratégicamente hacia $m_{\max} = 110$, convergiendo en apenas **7 ciclos** (263 iteraciones) y **0.011 s** de cómputo.
+  La matriz `orsirr1` ($N = 1,030$, $nnz = 6,858$, $\text{cond}(A) = 1.6720 \times 10^5$) ilustra de forma paradigmática la acción óptima del controlador DMDc-LQR:
+  - **GMRES(30):** Sufre severo estancamiento por dimensión insuficiente de Krylov, requiriendo **158 ciclos** (4,726 iteraciones internas) para alcanzar $\|r_k\|/\|r_0\| \le 10^{-9}$.
+  - **LGMRES(28, 2):** Con 2 vectores de enriquecimiento, atenúa el estancamiento pero requiere **78 ciclos** (2,182 iteraciones).
+  - **DMDc–LQR–GMRES:** Inicia con la ventana de exploración $m_0 = 30$ durante los primeros 5 ciclos (donde el residuo apenas decrece de $1.0$ a $0.57$). Al completar el snapshot en el ciclo 5 con un error de reconstrucción DMDc del orden de $10^{-12}$, la solución de CARE detecta el régimen lento y eleva $m$ de inmediato a $m_{\max} = 103$. Esto provoca un **desplome exponencial del residuo de $0.57$ a $0.037$** en un solo ciclo, rompiendo la meseta. Posteriormente, al observar una convergencia sostenida, el controlador reduce gradualmente $m$ a $89$ y luego a $53$ para economizar ortogonalizaciones, convergiendo en tan solo **26 ciclos** (1,919 iteraciones).
 * **Consistencia y Reproducibilidad:**
-  El script dedicado ([`scripts/run_sherman4_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_sherman4_experiment.py)) reproduce estos resultados exactos sin precondicionador (`-pc_type none`), regenerando automáticamente las figuras de comparación de métodos y dinámica de $m$.
+  El script dedicado ([`scripts/run_orsirr1_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_orsirr1_experiment.py)) reproduce estos resultados exactos sin precondicionador (`-pc_type none`), regenerando automáticamente las figuras vectoriales para publicación.
 
 ---
 
@@ -286,8 +286,8 @@ python3 scripts/run_all_22_benchmark.py
 # 4. Generar los gráficos de barras comparativos (análogos a LaTeX):
 python3 scripts/plot_benchmark_bars.py
 
-# 5. Ejecutar experimento sherman4 y generar figuras para publicación:
-python3 scripts/run_sherman4_experiment.py
+# 5. Ejecutar experimento orsirr1 y generar figuras para publicación:
+python3 scripts/run_orsirr1_experiment.py
 ```
 
 ---
