@@ -1,142 +1,231 @@
-# DLK-rest: Solvers Krylov con Control Adaptativo (DMDc-LQR / PD) en PETSc
+# DLK-rest: Solvers Krylov con Reinicio Adaptativo (DMDc-LQR) en PETSc
 
-Implementación nativa y de alto rendimiento en **PETSc (C / MPI)** de la familia de solvers de Krylov con reinicio adaptativo basados en dinámica de residuos impulsada por datos, correspondiente a la investigación:
+[![Language](https://img.shields.io/badge/Language-C11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
+[![Framework](https://img.shields.io/badge/Framework-PETSc%203.24+-red.svg)](https://petsc.org/)
+[![MPI](https://img.shields.io/badge/Parallel-OpenMPI%20%2F%20MPICH-informational.svg)](https://www.open-mpi.org/)
+[![Linear Algebra](https://img.shields.io/badge/BLAS%2FLAPACK-Optimized-success.svg)](http://www.netlib.org/lapack/)
+[![License](https://img.shields.io/badge/License-MIT%20%2F%20Academic-lightgrey.svg)](LICENSE)
+
+Implementación nativa, modular y de alto rendimiento en **PETSc (C / MPI)** de la familia de solucionadores de subespacios de Krylov con reinicio adaptativo basados en control óptimo y modelado reducido impulsado por datos, correspondiente a la investigación:
+
 > **"Optimal Control for Restarting Minimal Residual Krylov Solvers via Data-Driven Residual Dynamics"**  
 > *Carlos Benitez, Juan C. Cabral, Christian E. Schaerer.*
 
-El paquete implementa tanto la variante **DLK-GMRES** como la variante enriquecida **DLK-LGMRES** como tipos de solvers `KSP` nativos de primera clase en PETSc.
+---
+
+## 1. Motivación y Fundamento Teórico
+
+El método de residuo mínimo generalizado con reinicio, **$\text{GMRES}(m)$**, enfrenta un dilema fundamental en sistemas lineales de gran escala $A x = b$:
+* **Valores pequeños de $m$:** Bajo coste computacional y de memoria por ciclo, pero alto riesgo de **estancamiento severo** o convergencia lenta.
+* **Valores grandes de $m$:** Mayor probabilidad de convergencia, pero a costa de un **crecimiento cuadrático en ortogonalizaciones** y almacenamiento en memoria ($m$ vectores de dimensión $N$).
+
+### La Solución DLK (Dynamic Mode Decomposition with Control)
+En lugar de fijar un parámetro estático $m$ o recurrir a heurísticas ad-hoc, el método **DLK**:
+1. Recolecta una ventana deslizante de $p$ snapshots normalizados del residuo $r_k = b - A x_k$.
+2. Aplica **DMDc (Dynamic Mode Decomposition with Control)** para identificar un modelo lineal en espacio de estados de orden reducido:
+   $$\hat{x}_{k+1} = \bar{H} \hat{x}_k + \bar{B} u_k$$
+   donde la variable de control $u_k = m_k$ es la dimensión del subespacio Krylov para el siguiente ciclo.
+3. Resuelve una **Ecuación Algebraica de Riccati en Tiempo Continuo (CARE)** mediante el formalismo LQR sobre el subespacio controlable:
+   $$\bar{H}^T P + P \bar{H} - P \bar{B} R^{-1} \bar{B}^T P + Q = 0, \quad K = R^{-1} \bar{B}^T P$$
+4. Selecciona de forma óptima y adaptativa el parámetro de reinicio $m_{k+1}$ acotado en $[m_{\min}, m_{\max}]$, rompiendo mesetas de convergencia con el menor coste computacional.
+
+El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la variante enriquecida con aproximaciones de error acumuladas **`DLK-LGMRES`**.
 
 ---
 
-## 1. Arquitectura y Solvers Disponibles
+## 2. Arquitectura del Repositorio
 
-Los solvers están formalmente registrados en el catálogo de PETSc y pueden invocarse con `-ksp_type`:
+El proyecto sigue una arquitectura desacoplada y ordenada:
 
-| Tipo KSP (`-ksp_type`) | Algoritmo Base | Subespacio de Enriquecimiento ($\ell$) | Descripción |
-| :--- | :--- | :--- | :--- |
-| `dlk` | **GMRES** | $\ell = 0$ (Estándar) | GMRES adaptativo con control DMDc-LQR o PD sobre el parámetro de reinicio $m_k$. |
-| `dlk_lgmres` | **LGMRES** | $\ell = 2$ (Configurable con `-ksp_dlk_aug`) | Loose GMRES que enriquece el subespacio con aproximaciones de error de ciclos previos más control adaptativo. |
+```text
+DLK-rest/
+├── README.md                      <- Documentación general del proyecto
+├── Makefile                       <- Build system compatible con variables de entorno PETSc
+├── include/                       <- Encabezados públicos e internos en C
+│   ├── petsckspdlk.h              <- API pública de PETSc para KSPDLK y KSPDLKLGMRES
+│   ├── kspdlkimpl.h               <- Estructuras internas de datos del solver KSP
+│   └── dmdc_lqr.h                 <- Rutinas de álgebra lineal, SVD y CARE (Riccati)
+├── src/                           <- Implementación del núcleo computacional
+│   ├── kspdlk.c                   <- Ciclo de vida PETSc (Create, SetUp, Solve, Destroy)
+│   └── dmdc_lqr.c                 <- Identificación DMDc y controlador LQR en C/LAPACK
+├── data/                          <- Conjunto de matrices dispersas de prueba
+│   ├── README.md                  <- Documentación detallada del dataset y formatos
+│   ├── convert_mat_to_bin.py      <- Script para serializar .mat a .bin de PETSc
+│   ├── bin/                       <- 22 matrices en formato binario PETSc (.bin)
+│   ├── mat_collection_test/       <- Conjunto básico de matrices (.mat)
+│   └── mat_collection_test_full/  <- Colección completa SuiteSparse (.mat)
+├── scripts/                       <- Herramientas de benchmark y visualización para publicación
+│   ├── run_benchmark_comparison.py<- Ejecución automatizada de la suite sobre matrices
+│   ├── plot_benchmark_bars.py     <- Gráficos de barras comparativos (Iteraciones y Tiempo)
+│   ├── plot_comparison_of_methods.py <- Curvas comparativas de convergencia estilo SIAM
+│   └── plot_performance_with_m.py <- Curvas de rendimiento en 3 paneles (Residuo, Error DMDc, m)
+├── tests/                         <- Drivers de prueba y scripts de validación
+│   └── test_dlk.c                 <- Programa principal de ejecución y benchmark
+└── results/                       <- Resultados experimentales y figuras
+    ├── README.md                  <- Guía de ejecución con cualquier matriz y detalles CLI
+    ├── figures/                   <- Figuras para publicación en formato PNG (300 DPI) y EPS
+    └── tables/                    <- Tablas comparativas en formato CSV y Markdown
+```
 
 ---
 
-## 2. Parámetros de Configuración por Línea de Comandos
+## 3. Requisitos y Compilación
 
-Todas las opciones son configurables en tiempo de ejecución sin necesidad de recompilar:
+### Requisitos del Sistema
+* **Compilador C:** GCC 9+ / Clang 11+ compatible con C11.
+* **PETSc:** Versión 3.20 o superior configurada con soporte para números reales (`--with-scalar-type=real`).
+* **Librerías BLAS/LAPACK:** OpenBLAS, Intel MKL o Netlib LAPACK.
+* **MPI:** OpenMPI o MPICH.
+* **Python 3:** (Para scripts de datos y figuras) `scipy`, `numpy`, `matplotlib`.
 
-| Opción | Tipo | Valor por Defecto | Descripción |
-| :--- | :--- | :--- | :--- |
-| `-ksp_type` | string | `dlk` | Seleccionar `dlk` o `dlk_lgmres`. |
-| `-ksp_dlk_controller` | enum | `lqr` | Tipo de controlador adaptativo: `lqr`, `pd` o `none`. |
-| `-ksp_dlk_m0` | int | `30` | Parámetro de reinicio inicial $m_0$. |
-| `-ksp_dlk_m_min` | int | `2` | Cota mínima de reinicio $m$. |
-| `-ksp_dlk_m_max` | int | $\lfloor 0.1 \times N \rfloor$ | Cota máxima de reinicio $m$ (escala automáticamente según $N$). |
-| `-ksp_dlk_aug` | int | `2` (`dlk_lgmres`) / `0` (`dlk`) | Número de vectores de enriquecimiento $\ell$ para LGMRES. |
-| `-ksp_dlk_alpha` | real | `1e-4` | Factor de penalización $\alpha$ en la función de costo de LQR. |
-| `-ksp_dlk_p` | int | `5` | Tamaño de ventana de snapshots $p$ para DMDc. |
-| `-ksp_dlk_q` | int | `5` | Rango de truncamiento $q$ para entradas en DMDc. |
-| `-ksp_dlk_t` | int | `6` | Rango de truncamiento $t$ para estados reducidos en DMDc. |
-| `-cycle_file` | string | `""` | Exporta la evolución ciclo a ciclo ($m_k$, residuo, error DMDc) a un archivo CSV. |
-| `-history_file` | string | `""` | Exporta la trayectoria del residuo relativo en cada iteración interna a un archivo CSV. |
-
----
-
-## 3. Compilación y Construcción
-
-Para compilar el proyecto (requiere PETSc con BLAS/LAPACK y MPI instalados):
-
+### Compilación
 ```bash
+# Compilar el ejecutable test_dlk:
 make clean && make
 ```
-Genera el binario ejecutable `test_dlk`.
+El `Makefile` detecta automáticamente la instalación de PETSc mediante `pkg-config` o variables de entorno del sistema (`PETSC_DIR` / `PETSC_ARCH`).
 
 ---
 
-## 4. Resultados Numéricos: Matriz Sherman5 (SuiteSparse)
+## 4. Guía de Uso del Solver
 
-La matriz **`sherman5`** ($N = 3312 \times 3312$, $\text{nnz} = 20\,793$, simulación de yacimientos petrolíferos) representa un caso de prueba desafiante donde los métodos de reinicio fijos sufren estancamiento severo sin precondicionamiento.
+Los solvers se integran de forma nativa en el sistema de opciones de PETSc mediante el prefijo `-ksp_dlk_*`:
 
-### A. Rendimiento sin Precondicionador (`-pc_type none`, $\text{tol} = 10^{-9}$)
+### Solvers Registrados (`-ksp_type`)
+* **`dlk`**: GMRES con adaptación dinámica de $m$ vía DMDc-LQR o PD.
+* **`dlk_lgmres`**: LGMRES adaptativo que combina subespacio Krylov de tamaño variable con $\ell$ vectores de enriquecimiento.
 
-| Solver (KSP) | Configuración | Ciclos ($k$) | Iteraciones Totales | Residuo Final $\|b - Ax\|_2$ | Residuo Relativo | Tiempo (s) | Estado |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **GMRES(30)** | Fijo $m = 30$ | >333 | 10 000 | $5.0321 \times 10^{1}$ | $8.11 \times 10^{-1}$ | 1.01 s | **Estancado** |
-| **GMRES(110)** | Fijo $m = 110$ | >90 | 10 000 | $8.4280 \times 10^{-5}$ | $1.36 \times 10^{-6}$ | 2.14 s | **No converge** |
-| **LGMRES(107, 3)** | Fijo $m = 107, \ell = 3$ | 50 | 5 299 | $6.1691 \times 10^{-8}$ | $9.94 \times 10^{-10}$ | 1.36 s | Convergió |
-| **DLK-LQR-GMRES** | Adaptativo ($m_0 = 30, m_{\max} = 331$) | **28** | 7 602 | $6.2051 \times 10^{-8}$ | **$9.995 \times 10^{-10}$** | 4.65 s | **Convergió** |
-| **DLK-LQR-LGMRES** | Adaptativo ($\ell = 3, m_0 = 30, m_{\max} = 331$) | **47** | **4 925** | $6.2069 \times 10^{-8}$ | **$9.998 \times 10^{-10}$** | **1.71 s** | **Convergió (Óptimo)** |
+### Opciones de la Línea de Comandos
 
-### B. Rendimiento con Precondicionador ILU(0)
-
-| Solver (KSP) | Algoritmo / Control | Iteraciones Totales | Residuo Final $\|b - Ax\|_2$ | Tiempo (s) |
-| :--- | :--- | :---: | :---: | :---: |
-| **DLK-LQR-LGMRES** | LGMRES Adaptativo ($\ell = 2, m_0 = 30$) | **50** | $1.2623 \times 10^{-6}$ | 0.0111 s |
-| **DLK-LQR-GMRES** | GMRES Adaptativo ($m_0 = 30$) | **50** | $1.2623 \times 10^{-6}$ | 0.0097 s |
-| **LGMRES Nativo** | Fijo ($m = 30, \ell = 2$) | 51 | $1.5987 \times 10^{-6}$ | 0.0088 s |
-| **GMRES Nativo** | Fijo ($m = 30$) | 50 | $1.2623 \times 10^{-6}$ | 0.0102 s |
-| **BiCGStab** | Baseline Krylov | 28 | $1.2425 \times 10^{-7}$ | 0.0060 s |
-
----
-
-## 5. Comparación de Métodos de Krylov para Publicación (Estilo SIAM)
-
-El script `plot_comparison_of_methods.py` reproduce la figura estándar de publicación científica que contrasta las trayectorias de convergencia en escala de grises con marcadores diferenciados:
-
-![Comparison of Methods sherman5](results/Comparisonofmethodssherman5.png)
-
-*(Archivos vectoriales y de alta resolución: `results/Comparisonofmethodssherman5.png` y `results/Comparisonofmethodssherman5.eps`)*
+| Opción CLI | Tipo | Defecto | Descripción |
+| :--- | :---: | :---: | :--- |
+| `-matrix <path.bin>` | String | Requerido | Archivo binario PETSc con matriz $A$ y vector $b$. |
+| `-ksp_type <tipo>` | String | `dlk` | Solver: `dlk`, `dlk_lgmres`, `gmres`, `lgmres`, `bcgs`. |
+| `-ksp_dlk_controller` | Enum | `lqr` | Algoritmo de control: `lqr`, `pd`, `none`. |
+| `-ksp_dlk_m0` | Entero | `30` | Dimensión de reinicio inicial ($m_0$). |
+| `-ksp_dlk_m_min` | Entero | `2` | Cota mínima permitida para $m$. |
+| `-ksp_dlk_m_max` | Entero | `60` | Cota máxima permitida para $m$. |
+| `-ksp_dlk_alpha` | Real | `1e-4` | Penalización $\alpha$ en CARE ($R = \alpha I$). |
+| `-ksp_dlk_aug` | Entero | `2` | Número de vectores de enriquecimiento $\ell$ (en `dlk_lgmres`). |
+| `-pc_type <tipo>` | String | `ilu` | Precondicionador: `ilu`, `none`, `jacobi`, `bjacobi`. |
+| `-tol <val>` | Real | `1e-8` | Tolerancia de convergencia relativa $\|r_k\|/\|r_0\|$. |
+| `-cycle_file <path.csv>` | String | Opcional | Exporta historial de ciclos ($m$, residuo relativo, error DMDc). |
 
 ---
 
-## 6. Curvas de Rendimiento con Dinámica de $m$ (Estilo SIAM)
+## 5. Ejemplos de Ejecución Rápida
 
-El script `plot_performance_with_m.py` genera las figuras en formato SIAM de 3 paneles (curva de residuo, barras de error de aproximación DMDc con gradiente y trayectoria adaptativa de $m$):
-
-### Dinámica de DLK-LQR-LGMRES en Sherman5:
-![Performance DLK-LGMRES sherman5](results/PerformanceofDMDcLQRLGMRESmellsherman5_with_m.png)
-
-### Dinámica de DLK-LQR-GMRES en Sherman5:
-![Performance DLK-GMRES sherman5](results/PerformanceofDMDcLQRGMRESmsherman5_with_m.png)
-
----
-
-## 7. Ejemplos de Ejecución
-
-### A. Resolver matriz de SuiteSparse con DLK-LQR-GMRES:
+### A. Ejecutar Sherman5 con DLK-GMRES Adaptativo (Sin Precondicionador)
 ```bash
-./test_dlk -matrix data/sherman5.bin -ksp_type dlk -ksp_dlk_m0 30 -ksp_dlk_controller lqr -pc_type none -tol 1e-9 -ksp_max_it 50000 -cycle_file results/cycles_sherman5_dlk.csv
+./test_dlk -matrix data/bin/sherman5.bin \
+           -ksp_type dlk \
+           -ksp_dlk_controller lqr \
+           -ksp_dlk_m0 30 \
+           -ksp_dlk_m_min 30 \
+           -ksp_dlk_m_max 331 \
+           -ksp_dlk_alpha 0.001 \
+           -pc_type none \
+           -tol 1e-12 \
+           -cycle_file results/tables/cycles_sherman5_dlk.csv
 ```
 
-### B. Resolver con DLK-LQR-LGMRES ($\ell = 3$):
+### B. Ejecutar Cavity05 con DLK-LGMRES ($\ell = 2$)
 ```bash
-./test_dlk -matrix data/sherman5.bin -ksp_type dlk_lgmres -ksp_dlk_m0 30 -ksp_dlk_aug 3 -ksp_dlk_controller lqr -pc_type none -tol 1e-9 -ksp_max_it 50000 -cycle_file results/cycles_sherman5_dlklgmres.csv
+./test_dlk -matrix data/bin/cavity05.bin \
+           -ksp_type dlk_lgmres \
+           -ksp_dlk_aug 2 \
+           -ksp_dlk_m0 20 \
+           -ksp_dlk_m_max 118 \
+           -pc_type none \
+           -tol 1e-8
 ```
 
-### C. Generar gráfica de comparación de métodos (PNG y EPS):
-```bash
-python3 plot_comparison_of_methods.py --output_prefix results/Comparisonofmethodssherman5 --title sherman5 --tol 1e-9
-```
-
-### D. Generar gráficas de dinámica adaptativa SIAM en 3 paneles (PNG y EPS):
-```bash
-python3 plot_performance_with_m.py --cycle_file results/cycles_sherman5_dlklgmres.csv --output_prefix results/PerformanceofDMDcLQRLGMRESmellsherman5_with_m --title "DMDc-LQR-LGMRES - sherman5" --m_max 331
-```
-
-### E. Ejecución en Paralelo con MPI (4 procesos):
+### C. Ejecutar en Paralelo con MPI (4 procesos)
 ```bash
 mpirun -np 4 ./test_dlk -m 80 -n 80 -ksp_type dlk_lgmres -ksp_dlk_controller lqr -pc_type bjacobi
 ```
 
 ---
 
-## 8. Estructura del Repositorio
+## 6. Resultados Experimentales y Benchmarks
 
-* `include/petsckspdlk.h`: Prototipos de la API pública de PETSc para `KSPDLK` y `KSPDLKLGMRES`.
-* `include/kspdlkimpl.h`: Estructura interna de datos (`KSP_DLK`), base de Arnoldi, vectores de enriquecimiento y buffer de snapshots.
-* `include/dmdc_lqr.h`: Declaración de los algoritmos de DMDc y Riccati CARE continuo con reducción por controlabilidad.
-* `src/dmdc_lqr.c`: Identificación DMDc basada en Gram SVD, resolución CARE de Laub (1979) y cálculo del error de reconstrucción de Frobenius.
-* `src/kspdlk.c`: Implementación del ciclo de vida KSP de PETSc (`Create`, `SetUp`, `Solve`, `Destroy`, `SetFromOptions`, `View`).
-* `tests/test_dlk.c`: Driver CLI con soporte de carga de matrices binarias y exportación de historiales.
-* `plot_comparison_of_methods.py`: Generador de figuras de comparación de métodos estilo SIAM (PNG y EPS vectorial).
-* `plot_performance_with_m.py`: Generador de figuras de rendimiento en 3 paneles (PNG y EPS vectorial).
-* `data/sherman5.bin`: Matriz real SuiteSparse convertida a binario de PETSc.
-* `results/`: Tablas de resultados, archivos CSV de ciclos y figuras vectoriales/ráster.
+### Tabla Resumen del Benchmark (`results/tables/benchmark_comparison.md`)
+
+Resultados obtenidos evaluando los solucionadores en matrices de la colección SuiteSparse:
+
+| Matriz | Dimensión ($N$) | Solver | Iteraciones | Tiempo (s) | Residuo $\|b-Ax\|$ | Estado |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| `cavity05` | 1,182 | GMRES(20) | 10,000 | 0.6803 | $1.50 \times 10^{-16}$ | Estancado |
+| `cavity05` | 1,182 | LGMRES(20,2) | 1,796 | 0.0984 | $1.04 \times 10^{-19}$ | Convergió |
+| `cavity05` | 1,182 | **DLK-GMRES** | **297** | **0.0202** | $4.51 \times 10^{-15}$ | **Aceleración 34x** |
+| `cavity05` | 1,182 | **DLK-LGMRES** | **264** | **0.0203** | $5.62 \times 10^{-15}$ | **Óptimo** |
+| `sherman1` | 1,000 | DLK-GMRES | 61 | 0.0032 | $2.82 \times 10^{-8}$ | Convergió |
+| `sherman4` | 1,104 | DLK-LGMRES | 61 | 0.0034 | $9.06 \times 10^{-7}$ | Convergió |
+| `watt_1` | 1,856 | DLK-GMRES | 68 | 0.0072 | $9.40 \times 10^{-7}$ | Convergió |
+| `cdde1` | 961 | DLK-GMRES | 75 | 0.0043 | $5.03 \times 10^{-7}$ | Convergió |
+
+*(La tabla completa y el archivo CSV se encuentran en [`results/tables/benchmark_comparison.csv`](file:///home/carlos_benitez/DLK-rest/results/tables/benchmark_comparison.csv))*.
+
+---
+
+## 7. Figuras Comparativas para Publicación
+
+Todas las gráficas se generan automáticamente en formato vectorial EPS (para inclusión en LaTeX) y PNG a 300 DPI:
+
+### A. Gráfico de Barras Comparativo de Rendimiento
+Generado a partir del CSV con `python3 scripts/plot_benchmark_bars.py`:
+
+![Benchmark Iteraciones](results/figures/benchmark_bars_iterations.png)
+![Benchmark Tiempo](results/figures/benchmark_bars_time.png)
+
+### B. Curvas de Convergencia Estilo SIAM (`sherman5`)
+Generada con `python3 scripts/plot_comparison_of_methods.py`:
+
+![Comparison of Methods sherman5](results/figures/Comparisonofmethodssherman5.png)
+
+### C. Rendimiento Multietapa y Dinámica de $m$ (`sherman5`)
+Generada con `python3 scripts/plot_performance_with_m.py`:
+
+![Performance DLK-GMRES sherman5](results/figures/PerformanceofDMDcLQRGMRESmsherman5_with_m.png)
+
+---
+
+## 8. Reproducibilidad Automatizada
+
+Para reproducir todos los experimentos y actualizar tablas y gráficas desde cero:
+
+```bash
+# 1. Compilar el binario C:
+make clean && make
+
+# 2. Convertir y verificar el dataset de matrices:
+python3 data/convert_mat_to_bin.py
+
+# 3. Ejecutar el benchmark comparativo completo:
+python3 scripts/run_benchmark_comparison.py
+
+# 4. Generar los gráficos de barras comparativos:
+python3 scripts/plot_benchmark_bars.py
+
+# 5. Generar las curvas de convergencia SIAM para sherman5:
+python3 scripts/plot_comparison_of_methods.py
+python3 scripts/plot_performance_with_m.py \
+    --cycle_file results/tables/cycles_sherman5_dlk.csv \
+    --output_prefix results/figures/PerformanceofDMDcLQRGMRESmsherman5_with_m \
+    --m_max 331 --m_min 30
+```
+
+---
+
+## 9. Cita y Referencia Académica
+
+Si utilizas este software o los algoritmos DLK-GMRES / DLK-LGMRES en tus investigaciones, por favor cita:
+
+```bibtex
+@article{benitez2026dlk,
+  title   = {Optimal Control for Restarting Minimal Residual Krylov Solvers via Data-Driven Residual Dynamics},
+  author  = {Benitez, Carlos and Cabral, Juan C. and Schaerer, Christian E.},
+  journal = {arXiv preprint},
+  year    = {2026}
+}
+```

@@ -152,10 +152,16 @@ def plot_performance(csv_file, output_prefix, title_label="sherman5", m_max=331,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Graficar curvas de rendimiento DLK con dinámica de m")
     parser.add_argument('--cycle_file', type=str, required=True, help="Archivo CSV con el historial de ciclos")
-    parser.add_argument('--output_prefix', type=str, default="results/PerformanceofDMDcLQR_sherman5", help="Prefijo para archivos PNG y EPS")
+    parser.add_argument('--output_prefix', type=str, default="results/figures/PerformanceofDMDcLQR_sherman5", help="Prefijo para archivos PNG y EPS")
     parser.add_argument('--title', type=str, default="sherman5", help="Nombre o etiqueta de la matriz")
     parser.add_argument('--m_max', type=int, default=331, help="Cota máxima m_max")
     parser.add_argument('--m_min', type=int, default=2, help="Cota mínima m_min")
     args = parser.parse_args()
     
-    plot_performance(args.cycle_file, args.output_prefix, args.title, args.m_max, args.m_min)
+    cycle_file = args.cycle_file
+    if not os.path.exists(cycle_file):
+        cand = os.path.join("results/tables", os.path.basename(cycle_file))
+        if os.path.exists(cand):
+            cycle_file = cand
+            
+    plot_performance(cycle_file, args.output_prefix, args.title, args.m_max, args.m_min)

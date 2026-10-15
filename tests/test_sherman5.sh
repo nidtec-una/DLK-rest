@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-MATRIX_BIN="data/sherman5.bin"
+MATRIX_BIN="data/bin/sherman5.bin"
 OUT_DIR="results"
 
 # Asegurar que el archivo binario de sherman5 exista
 if [ ! -f "$MATRIX_BIN" ]; then
-    echo "Convirtiendo data/mat_collection_test/sherman5.mat a $MATRIX_BIN..."
-    python3 convert_mat_to_petsc.py
+    echo "Convirtiendo coleccion de matrices a $MATRIX_BIN..."
+    python3 data/convert_mat_to_bin.py
 fi
 
 mkdir -p "$OUT_DIR"

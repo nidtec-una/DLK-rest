@@ -86,10 +86,13 @@ def inspect_and_extract(mat_file):
 def main():
     io = PetscBinaryIO.PetscBinaryIO()
     
-    # Recolectar todos los archivos .mat únicos
+    # Determinar rutas relativas al script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, ".."))
+    
     search_dirs = [
-        "data/mat_collection_test_full",
-        "data/mat_collection_test"
+        os.path.join(script_dir, "mat_collection_test_full"),
+        os.path.join(script_dir, "mat_collection_test")
     ]
     
     mat_files = {}
@@ -101,7 +104,7 @@ def main():
                     if name not in mat_files:
                         mat_files[name] = os.path.join(d, f)
                         
-    output_dir = "data"
+    output_dir = os.path.join(script_dir, "bin")
     os.makedirs(output_dir, exist_ok=True)
     
     print("=" * 105)
@@ -118,13 +121,14 @@ def main():
         try:
             petsc_mat, petsc_vec, M, N, nnz, source_b = inspect_and_extract(mat_path)
             
-            # Guardar en data/<name>.bin
+            # Guardar en data/bin/<name>.bin
             bin_path = os.path.join(output_dir, f"{name}.bin")
             
             io.writeBinaryFile(bin_path, [petsc_mat, petsc_vec])
             
             dim_str = f"{M} x {N}"
-            print(f"{idx:<3} | {name:<18} | {dim_str:<16} | {nnz:<10} | {source_b:<22} | {bin_path}")
+            rel_bin_path = os.path.relpath(bin_path, repo_root)
+            print(f"{idx:<3} | {name:<18} | {dim_str:<16} | {nnz:<10} | {source_b:<22} | {rel_bin_path}")
             converted_records.append({
                 'name': name,
                 'M': M,

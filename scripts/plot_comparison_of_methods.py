@@ -30,7 +30,18 @@ def load_cycle_data(csv_file):
             rel_res.append(float(row['rel_residual']))
     return np.array(cycles), np.array(rel_res)
 
-def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
+def find_csv(filename):
+    candidates = [
+        os.path.join("results/tables", filename),
+        os.path.join("results", filename),
+        filename
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return os.path.join("results/tables", filename)
+
+def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
                     title_label="sherman5",
                     tol=1e-9):
     # Configuración de tamaño de figura SIAM: ~13 x 10 cm (5.12 x 3.94 pulgadas)
@@ -39,7 +50,7 @@ def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
 
     series = [
         {
-            'file': 'results/cycles_sherman5_gmres110.csv',
+            'file': find_csv('cycles_sherman5_gmres110.csv'),
             'name': 'GMRES(110)',
             'color': '#808080',
             'linestyle': ':',
@@ -48,7 +59,7 @@ def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
             'markersize': 5
         },
         {
-            'file': 'results/cycles_sherman5_lgmres107.csv',
+            'file': find_csv('cycles_sherman5_lgmres107.csv'),
             'name': 'LGMRES(107,3)',
             'color': '#404040',
             'linestyle': '--',
@@ -57,7 +68,7 @@ def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
             'markersize': 4.5
         },
         {
-            'file': 'results/cycles_sherman5_dlk.csv',
+            'file': find_csv('cycles_sherman5_dlk.csv'),
             'name': 'DMDc-LQR-GMRES',
             'color': '#000000',
             'linestyle': '--',
@@ -66,7 +77,7 @@ def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
             'markersize': 5
         },
         {
-            'file': 'results/cycles_sherman5_dlklgmres.csv',
+            'file': find_csv('cycles_sherman5_dlklgmres.csv'),
             'name': 'DMDc-LQR-LGMRES',
             'color': '#1a1a1a',
             'linestyle': '-.',
@@ -131,7 +142,7 @@ def plot_comparison(output_prefix="results/Comparisonofmethodssherman5",
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Graficar comparación de métodos Krylov estilo SIAM")
-    parser.add_argument('--output_prefix', type=str, default="results/Comparisonofmethodssherman5",
+    parser.add_argument('--output_prefix', type=str, default="results/figures/Comparisonofmethodssherman5",
                         help="Prefijo para archivos PNG y EPS")
     parser.add_argument('--title', type=str, default="sherman5", help="Etiqueta del problema")
     parser.add_argument('--tol', type=float, default=1e-9, help="Tolerancia del residuo")
