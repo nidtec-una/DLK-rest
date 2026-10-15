@@ -110,21 +110,21 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     
     ax1.semilogy(cycles, rel_res, color='#1f2d3d', linestyle='-', linewidth=1.3,
                  marker='^', markersize=4.5, markerfacecolor='white', markeredgecolor='#1f2d3d',
-                 markevery=1, zorder=3, label=r'Residuo Relativo $\|r_k\|/\|r_0\|$')
+                 markevery=1, zorder=3, label=r'Relative Residual $\|r_k\|/\|r_0\|$')
                  
     ax1.set_ylabel(r'$\|r_k\|/\|r_0\|$', fontsize=11)
     ax1.set_ylim([1e-10, 1.8])
-    ax1.set_title(f'Causal Feedback Dynamics and Sampling Delay in DMDc-LQR ({title_label})',
+    ax1.set_title(f'Causal Feedback Dynamics and Batch Sampling Delay in DMDc-LQR ({title_label})',
                   fontsize=11.5, fontweight='bold', pad=10)
     
-    # Anotaciones de las etapas de muestreo en Subplot 1
-    ax1.text(2.5, 0.08, 'Ventana 1\n($p=5$, con $m_0$)', fontsize=8, ha='center', va='center',
+    # Batch annotations in Subplot 1
+    ax1.text(2.5, 0.08, 'Batch 1\n($p=5$, with $m_0$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#7094b7', alpha=0.92))
-    ax1.text(7.5, 0.008, 'Ventana 2\n($p=5$, con $m_1$)', fontsize=8, ha='center', va='center',
+    ax1.text(7.5, 0.008, 'Batch 2\n($p=5$, with $m_1$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#d9a779', alpha=0.92))
-    ax1.text(12.5, 2e-5, 'Ventana 3\n(con $m_2$)', fontsize=8, ha='center', va='center',
+    ax1.text(12.5, 2e-5, 'Batch 3\n(with $m_2$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#62aa7e', alpha=0.92))
-    ax1.text(17.5, 4e-8, 'Ventana 4\n(con $m_3$)', fontsize=8, ha='center', va='center',
+    ax1.text(17.5, 4e-8, 'Batch 4\n(with $m_3$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#9973b5', alpha=0.92))
     
     # -------------------------------------------------------------
@@ -163,7 +163,7 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2.set_ylim([y_min, y_max])
     ax2.set_ylabel(r'$e = \|\hat{S} - S\|_F / \|S\|_F$', fontsize=10)
     
-    # Etiquetas de modelos
+    # Model identification labels
     ax2.text(2.5, stages[0]['error'] * 0.35, r'$\mathcal{M}_1$', fontsize=9, fontweight='bold',
              ha='center', va='center', color='#222222', zorder=4)
     ax2.text(7.5, stages[1]['error'] * 0.35, r'$\mathcal{M}_2$', fontsize=9, fontweight='bold',
@@ -173,18 +173,18 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2.text(17.5, stages[3]['error'] * 0.35, r'$\mathcal{M}_4$', fontsize=9, fontweight='bold',
              ha='center', va='center', color='#ffffff', zorder=4)
              
-    # Nodos de decisión LQR en k = 5 y 10
+    # LQR decision nodes at k = 5 and 10
     ax2.plot(5, stages[0]['error'], marker='o', markersize=6.5, color='#b22222', zorder=5)
     ax2.plot(10, stages[1]['error'], marker='o', markersize=6.5, color='#b22222', zorder=5)
     
-    ax2.annotate('LQR 1 en $k=5$\n' + r'$\mathcal{M}_1 \to m_1=42$', xy=(5, stages[0]['error']),
+    ax2.annotate('LQR 1 at $k=5$\n' + r'$\mathcal{M}_1 \to m_1=42$', xy=(5, stages[0]['error']),
                  xytext=(2.2, 4e-11),
                  arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
                  fontsize=8, color='#b22222', fontweight='bold',
                  bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
                  zorder=6)
                  
-    ax2.annotate('LQR 2 en $k=10$\n' + r'$\mathcal{M}_2 \to m_2=90$', xy=(10, stages[1]['error']),
+    ax2.annotate('LQR 2 at $k=10$\n' + r'$\mathcal{M}_2 \to m_2=90$', xy=(10, stages[1]['error']),
                  xytext=(7.2, 1.3e-10),
                  arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
                  fontsize=8, color='#b22222', fontweight='bold',
@@ -207,7 +207,7 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
         
     ax3.plot(x_stairs, y_stairs, color='#111111', linewidth=1.5, zorder=3, label=r'$m_k$')
     
-    # Líneas límite
+    # Lines for m bounds
     if m_max is not None:
         ax3.axhline(m_max, color='#666666', linestyle='--', linewidth=1.0, zorder=2)
         ax3.text(x_end * 0.02, m_max * 1.03, rf'$m_{{\max}} = {m_max}$',
@@ -217,23 +217,23 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
         
     y_upper = max(m_max * 1.22 if m_max else 350, float(np.max(m_vals)) * 1.22)
     ax3.set_ylim([0, y_upper])
-    ax3.set_xlabel('Número de ciclos ($k$)', fontsize=11)
+    ax3.set_xlabel('Number of cycles ($k$)', fontsize=11)
     ax3.set_ylabel(r'$m$', fontsize=11)
     
-    # Anotaciones de acción de control en Subplot 3
-    ax3.text(2.5, 16, r'$m_0 = 30$', fontsize=8.5, ha='center', va='center',
+    # Control action annotations in Subplot 3
+    ax3.text(2.5, 16, r'$m_0 = 30$' + '\n(initial)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#888888', alpha=0.92))
-    ax3.text(7.5, 25, r'$m_1 = 42$' + '\n' + r'(de $\mathcal{M}_1$)', fontsize=8, ha='center', va='center',
+    ax3.text(7.5, 25, r'$m_1 = 42$' + '\n' + r'(from $\mathcal{M}_1$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
-    ax3.text(12.5, 55, r'$m_2 = 90$' + '\n' + r'(de $\mathcal{M}_2$)', fontsize=8, ha='center', va='center',
+    ax3.text(12.5, 55, r'$m_2 = 90$' + '\n' + r'(from $\mathcal{M}_2$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
     ax3.text(17.5, 78, r'$m_3 = 103$' + '\n' + r'($m_{\max}$)', fontsize=8, ha='center', va='center',
              bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#333333', alpha=0.92))
 
-    # Indicador de Delay Causal en Subplot 3 (Flecha horizontal de delay de ventana)
+    # Batch Delay Indicator in Subplot 3
     ax3.annotate('', xy=(5, 55), xytext=(0, 55),
                  arrowprops=dict(arrowstyle='<->', color='#1d568c', lw=1.3))
-    ax3.text(2.5, 58, 'Delay: ' + r'$\Delta k = p = 5$', fontsize=7.5,
+    ax3.text(2.5, 58, 'Batch delay: ' + r'$\Delta k = p = 5$', fontsize=7.5,
              ha='center', va='bottom', color='#1d568c', fontweight='bold',
              bbox=dict(boxstyle='round,pad=0.15', facecolor='#edf4fc', edgecolor='#1d568c', alpha=0.92))
 
