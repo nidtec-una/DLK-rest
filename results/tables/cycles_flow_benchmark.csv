@@ -1,0 +1,10 @@
+Problem,Matrix,Tag,Kf,Cycles_GMRES,Cycles_LGMRES,Cycles_GMRES_DMDc_LQR,Cycles_LGMRES_DMDc_LQR
+1,flow_benchmark_2d_case_1_Kf1e-08,Kf1e-08,1.0e-08,NC,NC,NC,NC
+2,flow_benchmark_2d_case_1_Kf1e-06,Kf1e-06,1.0e-06,NC,NC,NC,NC
+3,flow_benchmark_2d_case_1_Kf1e-04,Kf1e-04,1.0e-04,NC,150,377,85
+4,flow_benchmark_2d_case_1_Kf1e-02,Kf1e-02,1.0e-02,NC,86,117,44
+5,flow_benchmark_2d_case_1_Kf1e+00,Kf1e+00,1.0e+00,NC,66,111,32
+6,flow_benchmark_2d_case_1_Kf1e+02,Kf1e+02,1.0e+02,NC,NC,165,50
+7,flow_benchmark_2d_case_1_Kf1e+04,Kf1e+04,1.0e+04,NC,NC,NC,248
+8,flow_benchmark_2d_case_1_Kf1e+06,Kf1e+06,1.0e+06,NC,NC,NC,NC
+9,flow_benchmark_2d_case_1_Kf1e+08,Kf1e+08,1.0e+08,NC,NC,NC,NC

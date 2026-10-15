@@ -14,7 +14,7 @@ static PetscErrorCode KSPSetUp_DLK(KSP ksp)
     PetscCall(PCGetOperators(ksp->pc, &A_mat, NULL));
     PetscCall(MatGetSize(A_mat, &N_size, NULL));
     PetscInt m_max_calc = (PetscInt)(0.10 * N_size);
-    if (dlk->m_max == 60 && m_max_calc > 60) {
+    if (!dlk->m_max_set && m_max_calc > 60) {
         dlk->m_max = m_max_calc;
     }
     if (dlk->m_max < dlk->m_min) dlk->m_max = dlk->m_min + 10;
@@ -457,9 +457,10 @@ static PetscErrorCode KSPSetFromOptions_DLK(KSP ksp, PetscOptionItems PetscOptio
     PetscFunctionBeginUser;
     PetscOptionsHeadBegin(PetscOptionsObject, "Opciones de KSP DLK (Adaptive DMDc-LQR GMRES / LGMRES)");
     PetscCall(PetscOptionsInt("-ksp_dlk_m0", "Parámetro inicial de reinicio m0", "KSPDLKSetRestart", dlk->m_initial, &dlk->m_initial, &flg));
-    if (flg) dlk->m = dlk->m_initial;
+    PetscBool flg_max = PETSC_FALSE;
     PetscCall(PetscOptionsInt("-ksp_dlk_m_min", "Cota mínima de m", "KSPDLKSetRestartBounds", dlk->m_min, &dlk->m_min, NULL));
-    PetscCall(PetscOptionsInt("-ksp_dlk_m_max", "Cota máxima de m", "KSPDLKSetRestartBounds", dlk->m_max, &dlk->m_max, NULL));
+    PetscCall(PetscOptionsInt("-ksp_dlk_m_max", "Cota máxima de m", "KSPDLKSetRestartBounds", dlk->m_max, &dlk->m_max, &flg_max));
+    if (flg_max) dlk->m_max_set = PETSC_TRUE;
     PetscCall(PetscOptionsInt("-ksp_dlk_aug", "Número de vectores de enriquecimiento LGMRES (l)", "KSPDLKSetAugmentation", dlk->aug_l, &dlk->aug_l, NULL));
     PetscCall(PetscOptionsEnum("-ksp_dlk_controller", "Tipo de controlador adaptativo", "KSPDLKSetController", DLKControllerTypes, (PetscEnum)dlk->ctrl_type, (PetscEnum *)&dlk->ctrl_type, NULL));
     PetscCall(PetscOptionsReal("-ksp_dlk_alpha", "Penalización alpha para LQR", "KSPDLKSetAlpha", dlk->alpha_lqr, &dlk->alpha_lqr, NULL));
@@ -508,6 +509,7 @@ PETSC_EXTERN PetscErrorCode KSPCreate_DLK(KSP ksp)
     dlk->m             = 30;
     dlk->m_min         = 2;
     dlk->m_max         = 60;
+    dlk->m_max_set     = PETSC_FALSE;
     dlk->max_k         = 70;
     dlk->aug_l         = 0;  /* 0 = GMRES estándar */
     dlk->ctrl_type     = DLK_CTRL_LQR;
@@ -557,6 +559,7 @@ PetscErrorCode KSPDLKSetRestartBounds(KSP ksp, PetscInt m_min, PetscInt m_max)
     PetscFunctionBeginUser;
     dlk->m_min = m_min;
     dlk->m_max = m_max;
+    dlk->m_max_set = PETSC_TRUE;
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 

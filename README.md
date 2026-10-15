@@ -37,9 +37,10 @@ El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la varian
 
 * **`src/` e `include/`**: Implementación nativa del solver KSP (`kspdlk.c`), rutinas de identificación DMDc y solución de Riccati (CARE) en C (`dmdc_lqr.c`), y encabezados públicos de PETSc (`petsckspdlk.h`).
 * **`data/`**: Colección de matrices organizadas en subdirectorios temáticos (`data/bin/suitesparse/` para las 22 matrices de referencia y `data/bin/flow_benchmark/` para matrices de medios fracturados), con enlaces simbólicos en `data/bin/` para retrocompatibilidad total, junto con sus scripts de conversión.
-* **`scripts/`**: Automatización del benchmark comparativo (`run_all_22_benchmark.py`), driver de prueba de `orsirr1` (`run_orsirr1_experiment.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
+* **`scripts/`**: Automatización de benchmarks (`run_all_22_benchmark.py`, `run_flow_benchmark.py`), drivers individuales (`run_orsirr1_experiment.py`, `run_wang2_experiment.py`, `run_young3c_experiment.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
 * **`tests/`**: Driver de validación y benchmarking `test_dlk.c`.
-* **`results/`**: Tablas experimentales en `results/tables/` (`matrix_info.csv`, `cycles_experiment.csv`, `avg_relativa_time_experiment.csv`) y figuras vectoriales en `results/figures/`.
+* **`results/`**: Tablas experimentales en `results/tables/` y figuras vectoriales en `results/figures/`.
+* **[`README_flow.md`](README_flow.md)**: Informe experimental y benchmark completo sobre problemas dimensionales mixtos de flujo en medios fracturados ($K_f = 10^{-8} \dots 10^8$), incluyendo tablas de ciclos/tiempos y gráficos de rendimiento de las 9 matrices.
 
 ---
 

@@ -11,6 +11,7 @@ typedef struct {
     PetscInt          m_initial;      /* Parámetro inicial m0 (por defecto 30) */
     PetscInt          m_min;          /* Cota inferior de m (por defecto 2) */
     PetscInt          m_max;          /* Cota superior de m (por defecto 100) */
+    PetscBool         m_max_set;      /* Indica si m_max fue fijado explícitamente por el usuario */
     PetscInt          max_k;          /* Capacidad máxima de memoria reservada para Arnoldi */
 
     /* --- Parámetros LGMRES (subespacio de enriquecimiento) --- */

@@ -69,19 +69,19 @@ Cada archivo `.bin` empaqueta de forma continua en precisión doble (64 bits IEE
 
 ### 3.2. Problemas Dimensionales Mixtos en Medios Fracturados (`data/bin/flow_benchmark/`)
 
-Conjunto de sistemas lineales correspondientes a problemas de flujo en medios porosos 2D con fracturas discretas (Mixed-Dimensional Flow) sujetos a variaciones extremas en la permeabilidad de fractura ($K_f$ desde $10^{-8}$ hasta $10^8$):
+Conjunto de sistemas lineales correspondientes a problemas de flujo en medios porosos 2D con fracturas discretas (Mixed-Dimensional Flow) sujetos a variaciones extremas en la permeabilidad de fractura ($K_f$ desde $10^{-8}$ hasta $10^8$). Para un análisis exhaustivo de los resultados experimentales, tablas comparativas y gráficos de rendimiento multietapa, consultar **[`../README_flow.md`](../README_flow.md)**:
 
 | # | Archivo Binario | Dimensión ($N$) | No Ceros ($nnz$) | Permeabilidad $K_f$ | Régimen Físico | Origen de $b$ |
 | :-: | :--- | :---: | :---: | :---: | :--- | :---: |
-| 1 | `flow_benchmark_2d_case_1_Kf1e-08.bin` | 10,351 | 51,357 | $10^{-8}$ | Fractura altamente impermeable (barrera) | Original |
-| 2 | `flow_benchmark_2d_case_1_Kf1e-06.bin` | 10,351 | 51,357 | $10^{-6}$ | Fractura de baja permeabilidad | Original |
-| 3 | `flow_benchmark_2d_case_1_Kf1e-04.bin` | 10,351 | 51,357 | $10^{-4}$ | Fractura moderadamente resistente | Original |
-| 4 | `flow_benchmark_2d_case_1_Kf1e-02.bin` | 10,351 | 51,357 | $10^{-2}$ | Transición matriz-fractura | Original |
-| 5 | `flow_benchmark_2d_case_1_Kf1e+00.bin` | 10,351 | 51,357 | $10^{0}$ | Permeabilidad homogénea | Original |
-| 6 | `flow_benchmark_2d_case_1_Kf1e+02.bin` | 10,351 | 51,357 | $10^{2}$ | Fractura moderadamente conductora | Original |
-| 7 | `flow_benchmark_2d_case_1_Kf1e+04.bin` | 10,351 | 51,357 | $10^{4}$ | Fractura conductora | Original |
-| 8 | `flow_benchmark_2d_case_1_Kf1e+06.bin` | 10,351 | 51,357 | $10^{6}$ | Fractura altamente conductora | Original |
-| 9 | `flow_benchmark_2d_case_1_Kf1e+08.bin` | 10,351 | 51,357 | $10^{8}$ | Canal de flujo casi ideal | Original |
+| 1 | `flow_benchmark_2d_case_1_Kf1e-08.bin` | 11,089 | 76,208 | $10^{-8}$ | Fractura altamente impermeable (barrera) | Original |
+| 2 | `flow_benchmark_2d_case_1_Kf1e-06.bin` | 11,089 | 76,208 | $10^{-6}$ | Fractura de baja permeabilidad | Original |
+| 3 | `flow_benchmark_2d_case_1_Kf1e-04.bin` | 11,089 | 76,208 | $10^{-4}$ | Fractura moderadamente resistente | Original |
+| 4 | `flow_benchmark_2d_case_1_Kf1e-02.bin` | 11,089 | 76,208 | $10^{-2}$ | Transición matriz-fractura | Original |
+| 5 | `flow_benchmark_2d_case_1_Kf1e+00.bin` | 11,089 | 76,208 | $10^{0}$ | Permeabilidad homogénea | Original |
+| 6 | `flow_benchmark_2d_case_1_Kf1e+02.bin` | 11,089 | 76,208 | $10^{2}$ | Fractura moderadamente conductora | Original |
+| 7 | `flow_benchmark_2d_case_1_Kf1e+04.bin` | 11,089 | 76,208 | $10^{4}$ | Fractura conductora | Original |
+| 8 | `flow_benchmark_2d_case_1_Kf1e+06.bin` | 11,089 | 76,208 | $10^{6}$ | Fractura altamente conductora | Original |
+| 9 | `flow_benchmark_2d_case_1_Kf1e+08.bin` | 11,089 | 76,208 | $10^{8}$ | Canal de flujo casi ideal | Original |
 
 ---
 
