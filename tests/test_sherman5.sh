@@ -1,13 +1,20 @@
 #!/bin/bash
 set -e
 
-MATRIX_BIN="data/bin/sherman5.bin"
+if [ -f "data/bin/suitesparse/sherman5.bin" ]; then
+    MATRIX_BIN="data/bin/suitesparse/sherman5.bin"
+else
+    MATRIX_BIN="data/bin/sherman5.bin"
+fi
 OUT_DIR="results"
 
 # Asegurar que el archivo binario de sherman5 exista
 if [ ! -f "$MATRIX_BIN" ]; then
     echo "Convirtiendo coleccion de matrices a $MATRIX_BIN..."
     python3 data/convert_mat_to_bin.py
+    if [ -f "data/bin/suitesparse/sherman5.bin" ]; then
+        MATRIX_BIN="data/bin/suitesparse/sherman5.bin"
+    fi
 fi
 
 mkdir -p "$OUT_DIR"
@@ -43,7 +50,7 @@ run_case "BiCGStab"        -ksp_type bcgs
 echo "------------------------------------------------------------------------------------------"
 echo ""
 echo "Generando gráfica de convergencia para sherman5..."
-python3 plot_convergence.py "$OUT_DIR"/history_sherman5_*.csv -o "$OUT_DIR/sherman5_convergence.png" -t "PETSc: Convergencia en Matriz Sherman5 (N = 3312)"
+python3 scripts/plot_convergence.py "$OUT_DIR"/history_sherman5_*.csv -o "$OUT_DIR/sherman5_convergence.png" -t "PETSc: Convergencia en Matriz Sherman5 (N = 3312)"
 
 echo ""
 echo "=========================================================================================="

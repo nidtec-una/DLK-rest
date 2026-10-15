@@ -48,18 +48,23 @@ PROBLEMS_DEF = [
 ]
 
 def resolve_bin_file(mat_name):
-    candidates = [
-        f"data/bin/{mat_name}.bin",
-        f"data/bin/{mat_name.replace('circuit2', 'circuit_2')}.bin",
-        f"data/bin/{mat_name.replace('orsirr1', 'orsirr_1')}.bin",
-        f"data/bin/{mat_name.replace('orsreg1', 'orsreg_1')}.bin",
-        f"data/bin/{mat_name.replace('watt1', 'watt_1')}.bin",
-        f"data/bin/{mat_name.replace('fpgatrans01', 'fpga_trans_01')}.bin"
+    aliases = [
+        mat_name,
+        mat_name.replace('circuit2', 'circuit_2'),
+        mat_name.replace('orsirr1', 'orsirr_1'),
+        mat_name.replace('orsreg1', 'orsreg_1'),
+        mat_name.replace('watt1', 'watt_1'),
+        mat_name.replace('fpgatrans01', 'fpga_trans_01')
     ]
+    candidates = []
+    for a in aliases:
+        candidates.append(f"data/bin/suitesparse/{a}.bin")
+        candidates.append(f"data/bin/flow_benchmark/{a}.bin")
+        candidates.append(f"data/bin/{a}.bin")
     for c in candidates:
         if os.path.exists(c):
             return c
-    return candidates[0]
+    return f"data/bin/suitesparse/{mat_name}.bin"
 
 def run_petsc_solver(bin_file, solver_type, m0=30, m_max=331, l=2, tol=1e-9, max_cycles=400, timeout=180):
     # En PETSc sin precondicionador (unpreconditioned, como en el benchmark de MATLAB)

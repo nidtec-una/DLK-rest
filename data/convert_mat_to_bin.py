@@ -104,7 +104,8 @@ def main():
                     if name not in mat_files:
                         mat_files[name] = os.path.join(d, f)
                         
-    output_dir = os.path.join(script_dir, "bin")
+    bin_root = os.path.join(script_dir, "bin")
+    output_dir = os.path.join(bin_root, "suitesparse")
     os.makedirs(output_dir, exist_ok=True)
     
     print("=" * 105)
@@ -121,10 +122,16 @@ def main():
         try:
             petsc_mat, petsc_vec, M, N, nnz, source_b = inspect_and_extract(mat_path)
             
-            # Guardar en data/bin/<name>.bin
+            # Guardar en data/bin/suitesparse/<name>.bin
             bin_path = os.path.join(output_dir, f"{name}.bin")
-            
             io.writeBinaryFile(bin_path, [petsc_mat, petsc_vec])
+            
+            # Crear enlace simbólico relativo en data/bin/<name>.bin para retrocompatibilidad
+            root_symlink = os.path.join(bin_root, f"{name}.bin")
+            rel_target = os.path.join("suitesparse", f"{name}.bin")
+            if os.path.islink(root_symlink) or os.path.exists(root_symlink):
+                os.remove(root_symlink)
+            os.symlink(rel_target, root_symlink)
             
             dim_str = f"{M} x {N}"
             rel_bin_path = os.path.relpath(bin_path, repo_root)
@@ -141,8 +148,28 @@ def main():
         except Exception as e:
             print(f"[ERROR] Error procesando {name} ({mat_path}): {e}")
             
+    # Crear alias sin guion bajo (compatibilidad con scripts)
+    aliases = {
+        'circuit2': 'circuit_2.bin',
+        'fpgatrans01': 'fpga_trans_01.bin',
+        'orsirr1': 'orsirr_1.bin',
+        'orsreg1': 'orsreg_1.bin',
+        'watt1': 'watt_1.bin',
+    }
+    for alias, target in aliases.items():
+        s_alias = os.path.join(output_dir, f"{alias}.bin")
+        if os.path.islink(s_alias) or os.path.exists(s_alias):
+            os.remove(s_alias)
+        os.symlink(target, s_alias)
+        
+        r_alias = os.path.join(bin_root, f"{alias}.bin")
+        if os.path.islink(r_alias) or os.path.exists(r_alias):
+            os.remove(r_alias)
+        os.symlink(os.path.join("suitesparse", f"{alias}.bin"), r_alias)
+            
     print("-" * 105)
     print(f"[✓] Se convirtieron exitosamente {len(converted_records)} de {len(mat_files)} matrices a formato binario PETSc (.bin).")
+    print(f"[✓] Guardadas en: data/bin/suitesparse/ con enlaces retrocompatibles en data/bin/")
     print("=" * 105)
 
 if __name__ == "__main__":

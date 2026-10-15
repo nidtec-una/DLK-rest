@@ -35,7 +35,7 @@ def run_command(cmd, desc):
     return True
 
 def main():
-    matrix_bin = "data/bin/young3c.bin"
+    matrix_bin = "data/bin/suitesparse/young3c.bin" if os.path.exists("data/bin/suitesparse/young3c.bin") else "data/bin/young3c.bin"
     if not os.path.exists(matrix_bin):
         print(f"[Error] No se encontró el archivo binario: {matrix_bin}", file=sys.stderr)
         print("Ejecuta primero: python3 data/convert_mat_to_bin.py")

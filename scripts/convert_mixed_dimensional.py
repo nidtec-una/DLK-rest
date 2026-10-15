@@ -122,8 +122,19 @@ if __name__ == '__main__':
     
     # Destinos:
     # 1. En la misma carpeta de descargas del usuario (al lado de los .mat)
-    # 2. En el repositorio DLK-rest (data/bin)
-    repo_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "bin"))
-    destinations = [source, repo_bin]
+    # 2. En el repositorio DLK-rest dentro de data/bin/flow_benchmark
+    repo_data_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "bin"))
+    flow_bin_dir = os.path.join(repo_data_bin, "flow_benchmark")
+    destinations = [source, flow_bin_dir]
     
-    convert_matrices(source, destinations)
+    results = convert_matrices(source, destinations)
+    
+    # Crear/actualizar symlinks relativos en data/bin/ para retrocompatibilidad total
+    for item in results:
+        fname = f"{item['name']}.bin"
+        symlink_path = os.path.join(repo_data_bin, fname)
+        rel_target = os.path.join("flow_benchmark", fname)
+        if os.path.islink(symlink_path) or os.path.exists(symlink_path):
+            os.remove(symlink_path)
+        os.symlink(rel_target, symlink_path)
+        print(f"Symlink retrocompatible: data/bin/{fname} -> {rel_target}")

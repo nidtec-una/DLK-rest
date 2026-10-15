@@ -140,7 +140,9 @@ def main():
             print(f"{pid:<3} | {mat_name:<14} | {n:<6} | {c_row['Cycles_GMRES']:<13} | {c_row['Cycles_LGMRES']:<14} | {c_row['Cycles_GMRES_DMDc_LQR']:<11} | {c_row['Cycles_LGMRES_DMDc_LQR']:<13} | {t_row['avg_time_GMRES_DMDc_LQR']} (previo)")
             continue
 
-        bin_path = f"data/bin/{mat_name}.bin"
+        bin_path = f"data/bin/suitesparse/{mat_name}.bin"
+        if not os.path.exists(bin_path):
+            bin_path = f"data/bin/{mat_name}.bin"
         if not os.path.exists(bin_path):
             print(f"[Aviso] No existe {bin_path}, omitiendo problema {pid}.")
             continue
