@@ -61,54 +61,109 @@ def plot_performance(csv_file, output_prefix, title_label="sherman5", m_max=331,
     ax1.set_title(f'Performance of DMDc-LQR ({title_label})', fontsize=11, fontweight='bold', pad=8)
     
     # -------------------------------------------------------------
+    # Extracción de etapas de control (snapshots y dinámica de m)
+    # -------------------------------------------------------------
+    # Identificar ciclos donde se calculó el modelo DMDc (dmdc_error > 0)
+    snap_indices = np.where(dmdc_errs > 0)[0]
+    
+    stages = []
+    prev_cycle = 0
+    
+    for s_idx in snap_indices:
+        s_cycle = cycles[s_idx]
+        val = dmdc_errs[s_idx]
+        
+        # Parámetro m activo que produjo la trayectoria del snapshot en [prev_cycle, s_cycle]
+        if prev_cycle == 0:
+            m_active = m_vals[0]
+        else:
+            idx = np.where(cycles == prev_cycle + 1)[0]
+            if len(idx) > 0:
+                m_active = m_vals[idx[0]]
+            else:
+                m_active = m_vals[s_idx]
+                
+        stages.append({
+            'x_start': prev_cycle,
+            'x_end': s_cycle,
+            'm': m_active,
+            'error': val
+        })
+        prev_cycle = s_cycle
+        
+    # Tramo residual final tras el último snapshot hasta la convergencia
+    if prev_cycle < cycles[-1]:
+        idx = np.where(cycles == prev_cycle + 1)[0]
+        if len(idx) > 0:
+            m_active = m_vals[idx[0]]
+        else:
+            m_active = m_vals[-1]
+            
+        stages.append({
+            'x_start': prev_cycle,
+            'x_end': cycles[-1],
+            'm': m_active,
+            'error': None
+        })
+
+    # -------------------------------------------------------------
     # (2) Barras de Error DMDc (con mapa de color en escala de grises SIAM)
     # -------------------------------------------------------------
     ax2 = axes[1]
     
-    # Identificar snapshots donde dmdc_error > 0
-    snap_indices = np.where(dmdc_errs > 0)[0]
-    
     if len(snap_indices) > 0:
-        valid_errs = dmdc_errs[snap_indices]
+        valid_errs = np.array([st['error'] for st in stages if st['error'] is not None and st['error'] > 0])
         min_err = np.min(valid_errs)
         max_err = np.max(valid_errs)
         if min_err == max_err:
             min_err = max_err * 0.1
         
-        norm = mcolors.LogNorm(vmin=min_err * 0.8, vmax=max_err * 1.2)
-        try:
-            cmap = matplotlib.colormaps['gist_yarg']
-        except AttributeError:
-            cmap = cm.get_cmap('gist_yarg')
+        # Límites verticales limpios para escala logarítmica
+        y_min = 10.0 ** (np.floor(np.log10(min_err)) - 0.5)
+        y_max = 10.0 ** (np.ceil(np.log10(max_err)) + 0.5)
         
-        # Intervalos de snapshot (cada barra cubre desde el snapshot previo hasta el actual)
-        prev_idx = 0
-        for s_idx in snap_indices:
-            val = dmdc_errs[s_idx]
-            x1 = prev_idx
-            x2 = cycles[s_idx]
-            width = max(1.0, float(x2 - x1))
-            color = cmap(norm(val))
-            
-            ax2.bar(x1, val, width=width, align='edge',
-                    color=color, edgecolor='#404040', linewidth=0.6, alpha=0.85)
-            prev_idx = x2
+        norm = mcolors.LogNorm(vmin=min_err, vmax=max_err)
+        # Mapa de grises SIAM idéntico a MATLAB (de 0.82 gris claro a 0.20 carbón oscuro)
+        cdict = {
+            'red':   [(0.0, 0.82, 0.82), (1.0, 0.20, 0.20)],
+            'green': [(0.0, 0.82, 0.82), (1.0, 0.20, 0.20)],
+            'blue':  [(0.0, 0.82, 0.82), (1.0, 0.20, 0.20)]
+        }
+        cmap = mcolors.LinearSegmentedColormap('siam_gray', cdict, 256)
+        
+        # Cada barra cubre exactamente el intervalo [x_start, x_end] donde se identificó el modelo
+        for st in stages:
+            if st['error'] is not None and st['error'] > 0:
+                x1 = st['x_start']
+                x2 = st['x_end']
+                val = st['error']
+                color = cmap(norm(val))
+                
+                # Polígono exacto en espacio logarítmico (idéntico a fill en MATLAB)
+                ax2.fill([x1, x2, x2, x1], [y_min, y_min, val, val],
+                         facecolor=color, edgecolor='#404040', linewidth=0.7, alpha=0.9)
             
         ax2.set_yscale('log')
-        ax2.set_ylim([min_err * 0.5, max_err * 2.0])
+        ax2.set_ylim([y_min, y_max])
     else:
         ax2.text(0.5, 0.5, 'No DMDc snapshots recorded', ha='center', va='center', transform=ax2.transAxes)
         
     ax2.set_ylabel(r'$e = \|\hat{S} - S\|_F / \|S\|_F$', fontsize=10)
-    ax2.grid(True, which='both', linestyle=':', linewidth=0.6, alpha=0.7)
-    ax2.tick_params(labelsize=10, direction='in', top=True, right=True)
+    ax2.tick_params(labelsize=10, direction='in', top=True, right=True, labelbottom=False)
         
     # -------------------------------------------------------------
-    # (3) Valores dinámicos de m
+    # (3) Valores dinámicos de m (perfectamente sincronizados con las etapas)
     # -------------------------------------------------------------
     ax3 = axes[2]
-    # Stairs plot de m vs ciclos
-    ax3.step(cycles, m_vals, where='post', color='#1a1a1a', linewidth=1.3, label=r'$m_k$')
+    
+    # Construcción precisa de la función escalonada de m coincidiendo punto a punto con las barras de error
+    x_stairs = []
+    y_stairs = []
+    for st in stages:
+        x_stairs.extend([st['x_start'], st['x_end']])
+        y_stairs.extend([st['m'], st['m']])
+        
+    ax3.plot(x_stairs, y_stairs, color='#1a1a1a', linewidth=1.3, label=r'$m_k$')
     
     # Cotas m_min y m_max
     if m_max is not None:
@@ -124,16 +179,24 @@ def plot_performance(csv_file, output_prefix, title_label="sherman5", m_max=331,
     ax3.set_ylim([0, y_upper])
     ax3.set_xlabel('Number of cycles ($k$)', fontsize=11)
     ax3.set_ylabel(r'$m$', fontsize=11)
-    ax3.grid(True, which='both', linestyle=':', linewidth=0.6, alpha=0.7)
-    ax3.tick_params(labelsize=10, direction='in', top=True, right=True)
+    ax3.tick_params(labelsize=10, direction='in', top=True, right=True, labelbottom=True)
     
-    # Ajuste del layout garantizando que ax1, ax2 y ax3 tengan exactamente el mismo ancho y alineación en x
-    plt.tight_layout(rect=[0.0, 0.0, 0.88, 1.0])
+    # Configuración uniforme de límites horizontales y rejilla en los 3 ejes
+    for ax in axes:
+        ax.set_xlim([0, x_end])
+        ax.grid(True, which='both', linestyle=':', linewidth=0.6, alpha=0.7)
+
+    # Desactivar etiquetas inferiores en ax1 y ax2 para una alineación limpia
+    ax1.tick_params(labelsize=10, direction='in', top=True, right=True, labelbottom=False)
+
+    # Ajuste de geometría fija de subplots (ancho y margen idénticos) dejando espacio a la derecha
+    fig.subplots_adjust(left=0.13, right=0.80, top=0.93, bottom=0.08, hspace=0.18)
+    fig.align_ylabels(axes)
     
-    # Añadir gradiente de colorbar a la derecha de ax2 en un eje dedicado
+    # Añadir gradiente de colorbar bien a la derecha de ax2 en un eje dedicado (sin saturar espacio)
     if len(snap_indices) > 0:
         pos2 = ax2.get_position()
-        cax = fig.add_axes([pos2.x1 + 0.035, pos2.y0, 0.025, pos2.height])
+        cax = fig.add_axes([0.855, pos2.y0, 0.022, pos2.height])
         sm = cm.ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cax, orientation='vertical')
