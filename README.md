@@ -230,6 +230,9 @@ Comparación de la convergencia de residuales entre GMRES(30), LGMRES(28, 2) y D
 #### B.2. Convergencia en Matriz `orsirr1`
 ![Comparison of Methods orsirr1](results/figures/Comparisonofmethodsorsirr1.png)
 
+#### B.3. Convergencia en Matriz `wang2`
+![Comparison of Methods wang2](results/figures/Comparisonofmethodswang2.png)
+
 ### C. Rendimiento Multietapa y Dinámica de $m$
 Análisis detallado en 3 paneles (decaimiento del residuo relativo $\|r_k\|/\|r_0\|$, error de reconstrucción DMDc $e = \|\hat{S} - S\|_F / \|S\|_F$, y evolución adaptativa del parámetro de reinicio $m_k$) generado con `scripts/plot_performance_with_m.py`:
 
@@ -242,6 +245,11 @@ Matriz acústica/estructural ($N = 841$, $\text{cond}(A) = 1.15 \times 10^4$, $m
 Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR exhibe una respuesta altamente adaptativa: eleva $m$ en las fases de lenta contracción ($30 \to 42 \to 90 \to 103$), desplomando el residuo, y posteriormente reduce $m$ progresivamente (llegando a $m=2, 6, 8, 17$) para economizar el costo computacional de ortogonalización cuando el residuo decae favorablemente, requiriendo un total de **52 ciclos** frente a los 158 de GMRES(30) y 78 de LGMRES(28, 2).
 
 ![Performance DLK-GMRES orsirr1](results/figures/PerformanceofDMDcLQRGMRESmorsirr1_with_m.png)
+
+#### C.3. Rendimiento Multietapa y Dinámica de $m$ (`wang2`)
+Matriz moderadamente condicionada con estructura en bandas y espectro agrupado ($N = 2,903$, $\text{cond}(A) = 3.18 \times 10^4$, $m_{\max} = 290$). Tras la ventana de exploración inicial ($m_0 = 30$), el controlador DMDc-LQR exhibe una modulación bidireccional paradigmática: eleva $m$ a $57$ para quebrar la meseta inicial (reduciendo el residuo de $0.3468$ a $8.29 \times 10^{-5}$), reduce luego $m$ drásticamente a $12$ durante el tramo de descenso sostenido para economizar ortogonalizaciones, y finalmente vuelve a elevar $m$ a $63$ y $59$ para cerrar la convergencia en **24 ciclos** (frente a los 93 de GMRES(30) y 29 de LGMRES(28, 2)), con errores de reconstrucción DMDc del orden de $10^{-13}\text{--}10^{-11}$.
+
+![Performance DLK-GMRES wang2](results/figures/PerformanceofDMDcLQRGMRESmwang2_with_m.png)
 
 ---
 
@@ -302,6 +310,7 @@ python3 scripts/plot_benchmark_bars.py
 # 5. Ejecutar experimentos individuales y generar figuras para publicación:
 python3 scripts/run_young3c_experiment.py
 python3 scripts/run_orsirr1_experiment.py
+python3 scripts/run_wang2_experiment.py
 ```
 
 ---
