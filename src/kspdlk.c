@@ -375,6 +375,11 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
                         m_new = dim_sp;
                     }
 
+                    /* Acotar m_new dentro de [m_min, m_max] */
+                    if (m_new < dlk->m_min) m_new = dlk->m_min;
+                    if (m_new > dlk->m_max) m_new = dlk->m_max;
+                    dlk->m = m_new;
+
                     PetscCall(PetscFree(Hbar));
                     PetscCall(PetscFree(Bbar));
                     PetscCall(PetscFree(xhat_end));
@@ -385,12 +390,11 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
                     dlk->inputs[0] = (PetscReal)m_new;
                     dlk->num_snapshots = 1;
                 }
+            } else if (dlk->ctrl_type == DLK_CTRL_PD) {
+                if (m_new < dlk->m_min) m_new = dlk->m_min;
+                if (m_new > dlk->m_max) m_new = dlk->m_max;
+                dlk->m = m_new;
             }
-
-            /* Acotar m_new dentro de [m_min, m_max] */
-            if (m_new < dlk->m_min) m_new = dlk->m_min;
-            if (m_new > dlk->m_max) m_new = dlk->m_max;
-            dlk->m = m_new;
         }
 
         /* Registrar ciclo en historial de diagnóstico */
