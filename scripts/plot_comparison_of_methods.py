@@ -3,11 +3,10 @@
 plot_comparison_of_methods.py
 
 Genera la gráfica de comparación de métodos de Krylov en formato estándar SIAM
-para publicación (replicando src/+plots/show_results_custom.m de MATLAB):
-- GMRES(110)
-- LGMRES(107, 3)
+para publicación:
+- GMRES(30)
+- LGMRES(28, 2)
 - DMDc-LQR-GMRES
-- DMDc-LQR-LGMRES
 
 Exporta en formato PNG de alta resolución (300 DPI) y EPS vectorial para LaTeX.
 """
@@ -41,8 +40,9 @@ def find_csv(filename):
             return c
     return os.path.join("results/tables", filename)
 
-def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
-                    title_label="sherman5",
+def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman4",
+                    matrix="sherman4",
+                    title_label="sherman4",
                     tol=1e-9):
     # Configuración de tamaño de figura SIAM: ~13 x 10 cm (5.12 x 3.94 pulgadas)
     fig, ax = plt.subplots(figsize=(5.5, 4.2))
@@ -50,7 +50,7 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
 
     series = [
         {
-            'file': find_csv('cycles_sherman5_gmres30.csv'),
+            'file': find_csv(f'cycles_{matrix}_gmres30.csv'),
             'name': 'GMRES(30)',
             'color': '#808080',
             'linestyle': ':',
@@ -59,7 +59,7 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
             'markersize': 5
         },
         {
-            'file': find_csv('cycles_sherman5_lgmres28.csv'),
+            'file': find_csv(f'cycles_{matrix}_lgmres28.csv'),
             'name': 'LGMRES(28,2)',
             'color': '#404040',
             'linestyle': '--',
@@ -68,22 +68,13 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
             'markersize': 4.5
         },
         {
-            'file': find_csv('cycles_sherman5_dlk.csv'),
+            'file': find_csv(f'cycles_{matrix}_dlk.csv'),
             'name': 'DMDc-LQR-GMRES',
             'color': '#000000',
             'linestyle': '-',
             'marker': '^',
             'linewidth': 1.4,
             'markersize': 5
-        },
-        {
-            'file': find_csv('cycles_sherman5_dlklgmres.csv'),
-            'name': 'DMDc-LQR-LGMRES',
-            'color': '#1a1a1a',
-            'linestyle': '-.',
-            'marker': 'd',
-            'linewidth': 1.3,
-            'markersize': 4.5
         }
     ]
 
@@ -119,7 +110,7 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
     ax.set_xlabel('Number of cycles ($k$)', fontsize=11)
     ax.set_ylabel(r'Residual norm $\|r_k\|/\|r_0\|$', fontsize=11)
     ax.set_ylim([tol * 0.5, 1.3])
-    ax.set_xlim([0, min(65, max_x + 5)])
+    ax.set_xlim([0, max(10, max_x + 2)])
 
     # Estilo de leyenda SIAM sin marco
     ax.legend(frameon=False, fontsize=9.5, loc='upper right')
@@ -145,10 +136,11 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Graficar comparación de métodos Krylov estilo SIAM")
-    parser.add_argument('--output_prefix', type=str, default="results/figures/Comparisonofmethodssherman5",
+    parser.add_argument('--matrix', type=str, default="sherman4", help="Nombre de la matriz")
+    parser.add_argument('--output_prefix', type=str, default="results/figures/Comparisonofmethodssherman4",
                         help="Prefijo para archivos PNG y EPS")
-    parser.add_argument('--title', type=str, default="sherman5", help="Etiqueta del problema")
+    parser.add_argument('--title', type=str, default="sherman4", help="Etiqueta del problema")
     parser.add_argument('--tol', type=float, default=1e-9, help="Tolerancia del residuo")
     args = parser.parse_args()
 
-    plot_comparison(args.output_prefix, args.title, args.tol)
+    plot_comparison(args.output_prefix, args.matrix, args.title, args.tol)

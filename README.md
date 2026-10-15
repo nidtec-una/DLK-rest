@@ -29,7 +29,7 @@ En lugar de fijar un parámetro estático $m$ o recurrir a heurísticas ad-hoc, 
    $$\bar{H}^T P + P \bar{H} - P \bar{B} R^{-1} \bar{B}^T P + Q = 0, \quad K = R^{-1} \bar{B}^T P$$
 4. Selecciona de forma óptima y adaptativa el parámetro de reinicio $m_{k+1}$ acotado en $[m_{\min}, m_{\max}]$, rompiendo mesetas de convergencia con el menor coste computacional.
 
-El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la variante enriquecida con aproximaciones de error acumuladas **`DLK-LGMRES`**.
+El solucionador principal **`DLK-GMRES`** integra control óptimo adaptativo de reinicio para acelerar la convergencia y evitar el estancamiento en sistemas lineales de gran escala.
 
 ---
 
@@ -37,7 +37,7 @@ El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la varian
 
 * **`src/` e `include/`**: Implementación nativa del solver KSP (`kspdlk.c`), rutinas de identificación DMDc y solución de Riccati (CARE) en C (`dmdc_lqr.c`), y encabezados públicos de PETSc (`petsckspdlk.h`).
 * **`data/`**: Colección de 22 matrices SuiteSparse y sus binarios optimizados en `data/bin/`, junto con el script de conversión `convert_mat_to_bin.py`.
-* **`scripts/`**: Automatización del benchmark comparativo (`run_benchmark_comparison.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
+* **`scripts/`**: Automatización del benchmark comparativo (`run_all_22_benchmark.py`), driver de prueba de `sherman4` (`run_sherman4_experiment.py`) y generación de figuras para publicación (`plot_benchmark_bars.py`, `plot_comparison_of_methods.py`, `plot_performance_with_m.py`).
 * **`tests/`**: Driver de validación y benchmarking `test_dlk.c`.
 * **`results/`**: Tablas experimentales en `results/tables/` (`matrix_info.csv`, `cycles_experiment.csv`, `avg_relativa_time_experiment.csv`) y figuras vectoriales en `results/figures/`.
 
@@ -63,24 +63,22 @@ El `Makefile` detecta automáticamente la instalación de PETSc mediante `pkg-co
 
 ## 4. Guía de Uso del Solver
 
-Los solvers se integran de forma nativa en el sistema de opciones de PETSc mediante el prefijo `-ksp_dlk_*`:
+El solver se integra de forma nativa en el sistema de opciones de PETSc mediante el prefijo `-ksp_dlk_*`:
 
-### Solvers Registrados (`-ksp_type`)
+### Solver Registrado (`-ksp_type`)
 * **`dlk`**: GMRES con adaptación dinámica de $m$ vía DMDc-LQR o PD.
-* **`dlk_lgmres`**: LGMRES adaptativo que combina subespacio Krylov de tamaño variable con $\ell$ vectores de enriquecimiento.
 
 ### Opciones de la Línea de Comandos
 
 | Opción CLI | Tipo | Defecto | Descripción |
 | :--- | :---: | :---: | :--- |
 | `-matrix <path.bin>` | String | Requerido | Archivo binario PETSc con matriz $A$ y vector $b$. |
-| `-ksp_type <tipo>` | String | `dlk` | Solver: `dlk`, `dlk_lgmres`, `gmres`, `lgmres`, `bcgs`. |
+| `-ksp_type <tipo>` | String | `dlk` | Solver: `dlk`, `gmres`, `lgmres`, `bcgs`. |
 | `-ksp_dlk_controller` | Enum | `lqr` | Algoritmo de control: `lqr`, `pd`, `none`. |
 | `-ksp_dlk_m0` | Entero | `30` | Dimensión de reinicio inicial ($m_0$). |
 | `-ksp_dlk_m_min` | Entero | `2` | Cota mínima permitida para $m$. |
 | `-ksp_dlk_m_max` | Entero | `60` | Cota máxima permitida para $m$. |
 | `-ksp_dlk_alpha` | Real | `1e-4` | Penalización $\alpha$ en CARE ($R = \alpha I$). |
-| `-ksp_dlk_aug` | Entero | `2` | Número de vectores de enriquecimiento $\ell$ (en `dlk_lgmres`). |
 | `-pc_type <tipo>` | String | `ilu` | Precondicionador: `ilu`, `none`, `jacobi`, `bjacobi`. |
 | `-tol <val>` | Real | `1e-8` | Tolerancia de convergencia relativa $\|r_k\|/\|r_0\|$. |
 | `-cycle_file <path.csv>` | String | Opcional | Exporta historial de ciclos ($m$, residuo relativo, error DMDc). |
@@ -89,41 +87,41 @@ Los solvers se integran de forma nativa en el sistema de opciones de PETSc media
 
 ## 5. Ejemplos de Ejecución Rápida
 
-### A. Ejecutar Sherman5 con DLK-GMRES Adaptativo (Sin Precondicionador)
+### A. Ejecutar Sherman4 con DLK-GMRES Adaptativo (Sin Precondicionador)
 ```bash
-./test_dlk -matrix data/bin/sherman5.bin \
+./test_dlk -matrix data/bin/sherman4.bin \
            -ksp_type dlk \
            -ksp_dlk_controller lqr \
            -ksp_dlk_m0 30 \
-           -ksp_dlk_m_min 30 \
-           -ksp_dlk_m_max 331 \
-           -ksp_dlk_alpha 0.001 \
+           -ksp_dlk_m_min 2 \
+           -ksp_dlk_m_max 110 \
+           -ksp_dlk_alpha 0.0001 \
            -pc_type none \
-           -tol 1e-12 \
-           -cycle_file results/tables/cycles_sherman5_dlk.csv
+           -tol 1e-9 \
+           -cycle_file results/tables/cycles_sherman4_dlk.csv
 ```
 
-### B. Ejecutar Cavity05 con DLK-LGMRES ($\ell = 2$)
+### B. Ejecutar Sherman4 con LGMRES(28, 2) de Referencia
 ```bash
-./test_dlk -matrix data/bin/cavity05.bin \
-           -ksp_type dlk_lgmres \
-           -ksp_dlk_aug 2 \
-           -ksp_dlk_m0 20 \
-           -ksp_dlk_m_max 118 \
+./test_dlk -matrix data/bin/sherman4.bin \
+           -ksp_type lgmres \
+           -ksp_lgmres_restart 28 \
+           -ksp_lgmres_augment 2 \
            -pc_type none \
-           -tol 1e-8
+           -tol 1e-9 \
+           -cycle_file results/tables/cycles_sherman4_lgmres28.csv
 ```
 
 ### C. Ejecutar en Paralelo con MPI (4 procesos)
 ```bash
-mpirun -np 4 ./test_dlk -m 80 -n 80 -ksp_type dlk_lgmres -ksp_dlk_controller lqr -pc_type bjacobi
+mpirun -np 4 ./test_dlk -m 80 -n 80 -ksp_type dlk -ksp_dlk_controller lqr -pc_type bjacobi
 ```
 
 ---
 
 ## 6. Resultados Experimentales y Benchmarks
 
-Evaluación comparativa integral de los cuatro solvers Krylov sobre el conjunto completo de **22 matrices de la colección SuiteSparse** bajo las mismas condiciones del artículo (`tol = 1e-9`, sin precondicionador, ejecución secuencial `OMP_NUM_THREADS=1`). Se denota como `NC` los métodos que no alcanzaron la tolerancia en el límite de ciclos.
+Evaluación comparativa integral de los tres solucionadores Krylov evaluados en el artículo (GMRES(30), LGMRES(28, 2) y DMDc-LQR-GMRES) sobre el conjunto completo de **22 matrices de la colección SuiteSparse** bajo condiciones rigurosamente idénticas (`tol = 1e-9`, sin precondicionador, ejecución secuencial `OMP_NUM_THREADS=1`). Se denota como `NC` los métodos que no alcanzaron la tolerancia en el límite de ciclos.
 
 ### Tabla 1: Información y Propiedades de las Matrices de Prueba (`results/tables/matrix_info.csv`)
 
@@ -154,57 +152,57 @@ Evaluación comparativa integral de los cuatro solvers Krylov sobre el conjunto 
 
 ### Tabla 2: Número de Ciclos de Reinicio hasta Convergencia (`results/tables/cycles_experiment.csv`)
 
-| Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) | DMDc–LQR–LGMRES($m, 2$) |
-| :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | `add20` | 35 | 21 | **7** | **7** |
-| 2 | `cavity05` | NC | 80 | **7** | **7** |
-| 3 | `cavity10` | NC | 127 | **9** | **13** |
-| 4 | `cdde1` | 33 | 28 | **7** | **7** |
-| 5 | `circuit2` | 25 | 20 | **6** | **6** |
-| 6 | `ex40` | NC | NC | **61** | **37** |
-| 7 | `fpgatrans01` | 104 | 35 | **9** | **9** |
-| 8 | `memplus` | 93 | 49 | **6** | **7** |
-| 9 | `orsirr1` | 158 | 78 | 26 | **17** |
-| 10 | `orsreg1` | 23 | 19 | **7** | **7** |
-| 11 | `pde2961` | 13 | 22 | **6** | **6** |
-| 12 | `raefsky1` | 172 | 27 | **6** | **6** |
-| 13 | `raefsky2` | 149 | 83 | 11 | **6** |
-| 14 | `rdb2048` | 16 | 13 | **6** | **6** |
-| 15 | `sherman1` | 123 | 27 | 16 | **13** |
-| 16 | `sherman4` | 26 | 16 | 7 | **6** |
-| 17 | `sherman5` | NC | NC | **29** | **22** |
-| 18 | `steam2` | 14 | 23 | **7** | 8 |
-| 19 | `wang2` | 93 | 29 | **6** | **6** |
-| 20 | `wang4` | 94 | NC | **6** | **6** |
-| 21 | `watt1` | 137 | 26 | 12 | **8** |
-| 22 | `young3c` | 342 | 104 | 57 | **32** |
+| Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) |
+| :---: | :--- | :---: | :---: | :---: |
+| 1 | `add20` | 35 | 21 | **7** |
+| 2 | `cavity05` | NC | 80 | **7** |
+| 3 | `cavity10` | NC | 127 | **9** |
+| 4 | `cdde1` | 33 | 28 | **7** |
+| 5 | `circuit2` | 25 | 20 | **6** |
+| 6 | `ex40` | NC | NC | **61** |
+| 7 | `fpgatrans01` | 104 | 35 | **9** |
+| 8 | `memplus` | 93 | 49 | **6** |
+| 9 | `orsirr1` | 158 | 78 | **26** |
+| 10 | `orsreg1` | 23 | 19 | **7** |
+| 11 | `pde2961` | 13 | 22 | **6** |
+| 12 | `raefsky1` | 172 | 27 | **6** |
+| 13 | `raefsky2` | 149 | 83 | **11** |
+| 14 | `rdb2048` | 16 | 13 | **6** |
+| 15 | `sherman1` | 123 | 27 | **16** |
+| 16 | `sherman4` | 26 | 16 | **7** |
+| 17 | `sherman5` | NC | NC | **29** |
+| 18 | `steam2` | 14 | 23 | **7** |
+| 19 | `wang2` | 93 | 29 | **6** |
+| 20 | `wang4` | 94 | NC | **6** |
+| 21 | `watt1` | 137 | 26 | **12** |
+| 22 | `young3c` | 342 | 104 | **57** |
 
 ### Tabla 3: Tiempo Computacional Promedio en Segundos (`results/tables/avg_relativa_time_experiment.csv`)
 
-| Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) | DMDc–LQR–LGMRES($m, 2$) |
-| :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | `add20` | 0.1253 | **0.0369** | 0.0761 | 0.0658 |
-| 2 | `cavity05` | NC | 0.1260 | **0.0204** | 0.0263 |
-| 3 | `cavity10` | NC | 0.4722 | 0.3611 | **0.2253** |
-| 4 | `cdde1` | 0.0225 | 0.0202 | 0.0120 | **0.0114** |
-| 5 | `circuit2` | 0.0826 | 0.0577 | 0.0669 | **0.0546** |
-| 6 | `ex40` | NC | NC | 98.1825 | **66.4723** |
-| 7 | `fpgatrans01` | 0.0627 | 0.0210 | 0.0220 | **0.0209** |
-| 8 | `memplus` | 1.0698 | **0.5176** | 2.9338 | 2.4465 |
-| 9 | `orsirr1` | 0.1150 | 0.0518 | 0.0679 | **0.0502** |
-| 10 | `orsreg1` | 0.0371 | **0.0255** | 0.0527 | 0.0454 |
-| 11 | `pde2961` | **0.0289** | 0.0389 | 0.0405 | 0.0502 |
-| 12 | `raefsky1` | 2.2357 | 0.3055 | **0.2631** | 0.3172 |
-| 13 | `raefsky2` | 2.4605 | 1.2293 | **0.4055** | 0.4627 |
-| 14 | `rdb2048` | 0.0279 | **0.0211** | 0.0214 | 0.0229 |
-| 15 | `sherman1` | 0.0872 | **0.0180** | 0.0468 | 0.0351 |
-| 16 | `sherman4` | 0.0250 | 0.0120 | **0.0114** | 0.0121 |
-| 17 | `sherman5` | NC | NC | 4.1707 | **2.0988** |
-| 18 | `steam2` | 0.0085 | 0.0119 | **0.0069** | 0.0071 |
-| 19 | `wang2` | 0.2086 | **0.0619** | 0.1329 | 0.1304 |
-| 20 | `wang4` | **2.3481** | NC | 4.1459 | 4.0501 |
-| 21 | `watt1` | 0.1869 | **0.0327** | 0.0582 | 0.0627 |
-| 22 | `young3c` | 0.2183 | **0.0574** | 0.1315 | 0.0675 |
+| Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) |
+| :---: | :--- | :---: | :---: | :---: |
+| 1 | `add20` | 0.1253 | **0.0369** | 0.0761 |
+| 2 | `cavity05` | NC | 0.1260 | **0.0204** |
+| 3 | `cavity10` | NC | 0.4722 | **0.3611** |
+| 4 | `cdde1` | 0.0225 | 0.0202 | **0.0120** |
+| 5 | `circuit2` | 0.0826 | **0.0577** | 0.0669 |
+| 6 | `ex40` | NC | NC | **98.1825** |
+| 7 | `fpgatrans01` | 0.0627 | **0.0210** | 0.0220 |
+| 8 | `memplus` | 1.0698 | **0.5176** | 2.9338 |
+| 9 | `orsirr1` | 0.1150 | **0.0518** | 0.0679 |
+| 10 | `orsreg1` | 0.0371 | **0.0255** | 0.0527 |
+| 11 | `pde2961` | **0.0289** | 0.0389 | 0.0405 |
+| 12 | `raefsky1` | 2.2357 | 0.3055 | **0.2631** |
+| 13 | `raefsky2` | 2.4605 | 1.2293 | **0.4055** |
+| 14 | `rdb2048` | 0.0279 | **0.0211** | 0.0214 |
+| 15 | `sherman1` | 0.0872 | **0.0180** | 0.0468 |
+| 16 | `sherman4` | 0.0250 | 0.0120 | **0.0114** |
+| 17 | `sherman5` | NC | NC | **4.1707** |
+| 18 | `steam2` | 0.0085 | 0.0119 | **0.0069** |
+| 19 | `wang2` | 0.2086 | **0.0619** | 0.1329 |
+| 20 | `wang4` | **2.3481** | NC | 4.1459 |
+| 21 | `watt1` | 0.1869 | **0.0327** | 0.0582 |
+| 22 | `young3c` | 0.2183 | **0.0574** | 0.1315 |
 
 ---
 
@@ -213,7 +211,7 @@ Evaluación comparativa integral de los cuatro solvers Krylov sobre el conjunto 
 Todas las gráficas se generan automáticamente en formato vectorial EPS (para inclusión directa en LaTeX) y PNG a 300 DPI, siendo análogas a las del artículo científico:
 
 ### A. Gráficos de Barras Comparativos (Ciclos y Tiempo Computacional Relativo)
-Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/carlos_benitez/DLK-rest/scripts/plot_benchmark_bars.py) evaluando las razones logarítmicas de convergencia $\log_{10}(\text{GMRES}(30)/\text{Krylov Solver})$ con respecto a GMRES(30) como base (LGMRES, DMDc-LQR-GMRES y DMDc-LQR-LGMRES, excluyendo CG):
+Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/carlos_benitez/DLK-rest/scripts/plot_benchmark_bars.py) evaluando las razones logarítmicas de convergencia $\log_{10}(\text{GMRES}(30)/\text{Krylov Solver})$ con respecto a GMRES(30) como base (LGMRES(28, 2) y DMDc-LQR-GMRES):
 
 #### Reducción en Número de Ciclos
 ![Number of Cycles](results/figures/bar_plot_Number_of_cycles.png)
@@ -221,15 +219,15 @@ Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/c
 #### Reducción en Tiempo Computacional Relativo
 ![Relative Computation Time](results/figures/bar_plot_Average_computation_relative_time.png)
 
-### B. Curvas de Convergencia Estilo SIAM (`sherman5`)
+### B. Curvas de Convergencia Estilo SIAM (`sherman4`)
 Generada con `python3 scripts/plot_comparison_of_methods.py`:
 
-![Comparison of Methods sherman5](results/figures/Comparisonofmethodssherman5.png)
+![Comparison of Methods sherman4](results/figures/Comparisonofmethodssherman4.png)
 
-### C. Rendimiento Multietapa y Dinámica de $m$ (`sherman5`)
+### C. Rendimiento Multietapa y Dinámica de $m$ (`sherman4`)
 Generada con `python3 scripts/plot_performance_with_m.py`:
 
-![Performance DLK-GMRES sherman5](results/figures/PerformanceofDMDcLQRGMRESmsherman5_with_m.png)
+![Performance DLK-GMRES sherman4](results/figures/PerformanceofDMDcLQRGMRESmsherman4_with_m.png)
 
 ---
 
@@ -248,8 +246,7 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 * **Ajuste:** El driver y scripts de benchmarking calculan el límite de iteraciones de PETSc como $\max(50000, \text{max\_cycles} \times m_{\max})$, permitiendo que los algoritmos alcancen la convergencia óptima sin truncamiento artificial.
 
 ### C. Formulación de Riccati (CARE) y Acotado de $m$
-* **Resolución de CARE:** En MATLAB se invoca `lqr(H, B, Q, R)`. En PETSc (`src/dmdc_lqr.c`), se resolvió de forma nativa la Ecuación Algebraica de Riccati en Tiempo Continuo (CARE) mediante el formalismo Hamiltoniano de Laub (1979) utilizando descomposición espectral de LAPACK (`LAPACKgeev_`) y proyección sobre el subespacio controlable (`LAPACKgesvd_`) si el par $(\bar{H}, \bar{B})$ es no controlable.
-* **Descuento de Enriquecimiento en LGMRES:** De manera exacta a la formulación teórica del artículo (`LGMRES_DMDc_LQR_fixp.m`), cuando se utiliza `dlk_lgmres` con $\ell$ vectores de enriquecimiento, el tamaño del subespacio Krylov estándar se ajusta a $m_k - \ell$, manteniendo constante la dimensión proyectada total y preservando la correspondencia matemática con MATLAB.
+* **Resolución de CARE:** En MATLAB se invoca `lqr(H, B, Q, R)`. En PETSc (`src/dmdc_lqr.c`), se resolvió de forma nativa la Ecuación Algebraica de Riccati en Tiempo Continuo (CARE) mediante el formalismo Hamiltoniano de Laub (1979) utilizando descomposición espectral de LAPACK (`LAPACKgeev_`) y proyección sobre el subespacio controlable (`LAPACKgesvd_`) si el par $(\bar{H}, \bar{B})$ es no controlable con penalización $R_c = \alpha = 10^{-4}$ consistente con el sistema completo.
 
 ### D. Criterio de Residuo y Ausencia de Precondicionador
 * **Alineación de Tolerancia:** En las comparaciones del artículo, los solucionadores operan sin precondicionador (`Unpreconditioned GMRES`). En PETSc, fijar explícitamente `-pc_type none` garantiza que el residuo monitoreado sea la norma Euclidiana directa $\|b - A x_k\|_2 / \|b\|_2$, haciéndolo estrictamente comparable con la tolerancia relativa $\epsilon = 10^{-9}$ empleada en MATLAB.
@@ -257,21 +254,14 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 ### E. Serialización y Preservación de Lado Derecho ($b$)
 * **Dataset SuiteSparse:** En los archivos `.mat` originales, ciertas matrices disponían de un vector $b$ explícito mientras que en otras se generaba $b = \mathbf{1}$. El conversor de PETSc ([`data/convert_mat_to_bin.py`](file:///home/carlos_benitez/DLK-rest/data/convert_mat_to_bin.py)) detecta y preserva rigurosamente el vector $b$ original o sintetiza el vector unitario, empaquetándolos en formato binario nativo de PETSc (`PetscViewerBinary`) para evitar diferencias en la escala inicial del residuo $\|r_0\|$.
 
-### F. Caso de Estudio `sherman5`: Diagnóstico del Falso Breakdown, Penalización CARE y Unificación Experimental
-* **Diagnóstico de la Discrepancia Previa (20 ciclos en LGMRES):**
-  Durante las pruebas iniciales sobre `sherman5`, se observó que la tabla general marcaba 20 ciclos para `DLK-LGMRES`, mientras que ejecuciones aisladas no convergían o tomaban tiempos discordantes. Una inspección rigurosa a nivel de código reveló:
-  1. *Falso "Happy Breakdown" en vectores de enriquecimiento:* En `src/kspdlk.c`, durante los pasos de aumento de LGMRES ($j \ge m$), cuando un vector de error acumulado resultaba linealmente dependiente del subespacio Krylov ($h_{j+1,j} \le 10^{-14}$), las rotaciones de Givens previas forzaban a cero el elemento correspondiente en el vector del residuo de Hessenberg ($rs[j+1] = 0$). Esto provocaba que la prueba interna de convergencia de PETSc detectara un residuo algebraico nulo (`CONVERGED_ATOL`), terminando el solver anticipadamente en el ciclo 20 a pesar de que la norma del residuo real explícito $\|b - A x_k\|$ era de $49.98$.
-  2. *Parámetros históricos divergentes en scripts:* El script histórico de `sherman5` utilizaba parámetros heredados de `test_performance.m` de MATLAB (`GMRES(110)`, `LGMRES(107, 3)`), mientras que el benchmark de 22 matrices ejecutaba `GMRES(30)` y `LGMRES(28, 2)`.
-* **Correcciones Implementadas:**
-  1. **Truncamiento limpio en `kspdlk.c`:** Si $j \ge m$ y $h_{j+1,j} \le 10^{-14}$, se detiene limpiamente la etapa de aumento (`actual_s = j; break;`) sin aplicar rotaciones que alteren erróneamente el residuo. Además, se añadió una verificación explícita e intransigente del residuo real al final de cada ciclo (`(*ksp->converged)(ksp, ksp->its, rnorm, ...)`).
-  2. **Consistencia en Penalización CARE ($R_c = \alpha$):** En `src/dmdc_lqr.c`, al proyectar la Ecuación de Riccati sobre el subespacio controlable, se fijó $R_c = \alpha = 10^{-4}$ en concordancia con el sistema completo (reemplazando el valor fijo $1.0$ que atenuaba en exceso la acción de control ante matrices mal condicionadas).
-  3. **Unificación rigurosa de condiciones de prueba:** Tanto el script de benchmarking global ([`scripts/run_all_22_benchmark.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_all_22_benchmark.py)) como el script de estudio detallado ([`scripts/run_sherman5_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_sherman5_experiment.py)) emplean exactamente los mismos parámetros y condiciones: estrictamente sin precondicionador (`-pc_type none`), tolerancia $\|r_k\|/\|r_0\| \le 10^{-9}$, $m_0 = 30$, $\ell = 2$ vectores de aumento, y $m_{\max} = 331$.
-* **Resultados Verificados y Consistentes:**
-  - `GMRES(30)`: Estancado en residuo relativo $\approx 0.81$ $\implies$ **NC** en ambas pruebas.
-  - `LGMRES(28, 2)`: Estancado en residuo relativo $\approx 0.84$ $\implies$ **NC** en ambas pruebas.
-  - `DMDc–LQR–GMRES`: Rompe el estancamiento y converge a $5.16 \times 10^{-8}$ en **29 ciclos** (tiempo $4.17$ s en benchmark, idéntico en pruebas individuales).
-  - `DMDc–LQR–LGMRES`: Rompe el estancamiento y converge a $6.18 \times 10^{-8}$ en **22 ciclos** (tiempo $2.10$ s en benchmark, idéntico en pruebas individuales).
-  La coincidencia entre la tabla del benchmark y las ejecuciones individuales es ahora del 100%.
+### F. Caso de Estudio `sherman4`: Validación Experimental y Dinámica Adaptativa DLK-GMRES
+* **Comportamiento Comparativo:**
+  La matriz `sherman4` ($N = 1,104$, $nnz = 3,786$, $\text{cond}(A) = 7.1579 \times 10^3$) ilustra con nitidez la superioridad del modelado dinámico y control óptimo de reinicio:
+  - **GMRES(30):** Requiere **26 ciclos** (757 iteraciones internas de Arnoldi) para alcanzar la tolerancia $\|r_k\|/\|r_0\| \le 10^{-9}$.
+  - **LGMRES(28, 2):** Con 2 vectores de enriquecimiento, converge en **16 ciclos** (446 iteraciones).
+  - **DMDc–LQR–GMRES:** A partir de los snapshots del residuo, identifica la dinámica del sistema y adapta $m$ estratégicamente hacia $m_{\max} = 110$, convergiendo en apenas **7 ciclos** (263 iteraciones) y **0.011 s** de cómputo.
+* **Consistencia y Reproducibilidad:**
+  El script dedicado ([`scripts/run_sherman4_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_sherman4_experiment.py)) reproduce estos resultados exactos sin precondicionador (`-pc_type none`), regenerando automáticamente las figuras de comparación de métodos y dinámica de $m$.
 
 ---
 
@@ -286,26 +276,22 @@ make clean && make
 # 2. Convertir y verificar el dataset completo de 22 matrices:
 python3 data/convert_mat_to_bin.py
 
-# 3. Ejecutar el benchmark integral de las 22 matrices (4 métodos):
+# 3. Ejecutar el benchmark integral de las 22 matrices (3 métodos):
 export OMP_NUM_THREADS=1
 python3 scripts/run_all_22_benchmark.py
 
-# 4. Generar los gráficos de barras comparativos (sin CG, análogos a LaTeX):
+# 4. Generar los gráficos de barras comparativos (análogos a LaTeX):
 python3 scripts/plot_benchmark_bars.py
 
-# 5. Generar curvas SIAM y rendimiento con m para sherman5:
-python3 scripts/plot_comparison_of_methods.py
-python3 scripts/plot_performance_with_m.py \
-    --cycle_file results/tables/cycles_sherman5_dlk.csv \
-    --output_prefix results/figures/PerformanceofDMDcLQRGMRESmsherman5_with_m \
-    --m_max 331 --m_min 30
+# 5. Ejecutar experimento sherman4 y generar figuras para publicación:
+python3 scripts/run_sherman4_experiment.py
 ```
 
 ---
 
 ## 10. Cita y Referencia Académica
 
-Si utilizas este software o los algoritmos DLK-GMRES / DLK-LGMRES en tus investigaciones, por favor cita:
+Si utilizas este software o el algoritmo DLK-GMRES en tus investigaciones, por favor cita:
 
 ```bibtex
 @article{benitez2026dlk,

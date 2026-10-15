@@ -156,8 +156,8 @@ def main():
         bin_path = resolve_bin_file(name)
         if not os.path.exists(bin_path):
             print(f"[Error] No se encontró {bin_path}")
-            cycles_rows.append({"Problem": pid, "Matrix": name, "Cycles_GMRES": "NC", "Cycles_LGMRES": "NC", "Cycles_GMRES_DMDc_LQR": "NC", "Cycles_LGMRES_DMDc_LQR": "NC"})
-            time_rows.append({"Problem": pid, "Matrix": name, "avg_time_GMRES": "NC", "avg_time_LGMRES": "NC", "avg_time_GMRES_DMDc_LQR": "NC", "avg_time_LGMRES_DMDc_LQR": "NC"})
+            cycles_rows.append({"Problem": pid, "Matrix": name, "Cycles_GMRES": "NC", "Cycles_LGMRES": "NC", "Cycles_GMRES_DMDc_LQR": "NC"})
+            time_rows.append({"Problem": pid, "Matrix": name, "avg_time_GMRES": "NC", "avg_time_LGMRES": "NC", "avg_time_GMRES_DMDc_LQR": "NC"})
             continue
 
         m_max = min(n, max(30, int(round(0.10 * n))))
@@ -170,16 +170,13 @@ def main():
         cl, tl = run_petsc_solver(bin_path, "LGMRES", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=180)
         # 3. DLK-GMRES(30)
         c_dlk, t_dlk = run_petsc_solver(bin_path, "GMRES_DMDc_LQR", m0=m0_default, m_max=m_max, tol=tol, max_cycles=max_cycles, timeout=180)
-        # 4. DLK-LGMRES(28, 2)
-        c_dlkl, t_dlkl = run_petsc_solver(bin_path, "LGMRES_DMDc_LQR", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=180)
 
         cycles_rows.append({
             "Problem": pid,
             "Matrix": name,
             "Cycles_GMRES": cg,
             "Cycles_LGMRES": cl,
-            "Cycles_GMRES_DMDc_LQR": c_dlk,
-            "Cycles_LGMRES_DMDc_LQR": c_dlkl
+            "Cycles_GMRES_DMDc_LQR": c_dlk
         })
 
         time_rows.append({
@@ -187,22 +184,21 @@ def main():
             "Matrix": name,
             "avg_time_GMRES": tg,
             "avg_time_LGMRES": tl,
-            "avg_time_GMRES_DMDc_LQR": t_dlk,
-            "avg_time_LGMRES_DMDc_LQR": t_dlkl
+            "avg_time_GMRES_DMDc_LQR": t_dlk
         })
 
-        print(f"{pid:<3} | {name:<14} | {n:<6} | {str(cg):<13} | {str(cl):<14} | {str(c_dlk):<11} | {str(c_dlkl):<13} | {str(t_dlk)}")
+        print(f"{pid:<3} | {name:<14} | {n:<6} | {str(cg):<13} | {str(cl):<14} | {str(c_dlk):<11} | {str(t_dlk)}")
 
     # Guardar cycles_experiment.csv
     with open(out_cycles, "w", newline="") as f:
-        fieldnames = ["Problem", "Matrix", "Cycles_GMRES", "Cycles_LGMRES", "Cycles_GMRES_DMDc_LQR", "Cycles_LGMRES_DMDc_LQR"]
+        fieldnames = ["Problem", "Matrix", "Cycles_GMRES", "Cycles_LGMRES", "Cycles_GMRES_DMDc_LQR"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(cycles_rows)
 
     # Guardar avg_relativa_time_experiment.csv
     with open(out_time, "w", newline="") as f:
-        fieldnames = ["Problem", "Matrix", "avg_time_GMRES", "avg_time_LGMRES", "avg_time_GMRES_DMDc_LQR", "avg_time_LGMRES_DMDc_LQR"]
+        fieldnames = ["Problem", "Matrix", "avg_time_GMRES", "avg_time_LGMRES", "avg_time_GMRES_DMDc_LQR"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(time_rows)

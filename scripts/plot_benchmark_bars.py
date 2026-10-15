@@ -42,7 +42,6 @@ def generate_bar_dual_custom(csv_path, title_label, y_label, output_filename, is
     col_gmres = []
     col_lgmres = []
     col_dlk = []
-    col_dlkl = []
 
     with open(csv_path, 'r') as f:
         reader = csv.DictReader(f)
@@ -53,25 +52,21 @@ def generate_bar_dual_custom(csv_path, title_label, y_label, output_filename, is
                 col_gmres.append(parse_val(row.get("Cycles_GMRES")))
                 col_lgmres.append(parse_val(row.get("Cycles_LGMRES")))
                 col_dlk.append(parse_val(row.get("Cycles_GMRES_DMDc_LQR")))
-                col_dlkl.append(parse_val(row.get("Cycles_LGMRES_DMDc_LQR")))
             else:
                 col_gmres.append(parse_val(row.get("avg_time_GMRES")))
                 col_lgmres.append(parse_val(row.get("avg_time_LGMRES")))
                 col_dlk.append(parse_val(row.get("avg_time_GMRES_DMDc_LQR")))
-                col_dlkl.append(parse_val(row.get("avg_time_LGMRES_DMDc_LQR")))
 
     n_total = len(problems)
 
     # 1. Calcular ratios log10(GMRES / Metodo)
     r_lgmres = []
     r_dlk = []
-    r_dlkl = []
 
     for i in range(n_total):
         vg = col_gmres[i]
         vl = col_lgmres[i]
         vd = col_dlk[i]
-        vdl = col_dlkl[i]
 
         if not np.isnan(vg) and vg > 0 and not np.isnan(vl) and vl > 0:
             r_lgmres.append(np.log10(vg / vl))
@@ -83,15 +78,10 @@ def generate_bar_dual_custom(csv_path, title_label, y_label, output_filename, is
         else:
             r_dlk.append(np.nan)
 
-        if not np.isnan(vg) and vg > 0 and not np.isnan(vdl) and vdl > 0:
-            r_dlkl.append(np.log10(vg / vdl))
-        else:
-            r_dlkl.append(np.nan)
-
-    # 2. Máscara de validación (Filtrar NC/NaN para tener las 3 series válidas)
+    # 2. Máscara de validación (Filtrar NC/NaN para tener las 2 series válidas)
     valid_mask = []
     for i in range(n_total):
-        is_valid = (not np.isnan(r_lgmres[i])) and (not np.isnan(r_dlk[i])) and (not np.isnan(r_dlkl[i]))
+        is_valid = (not np.isnan(r_lgmres[i])) and (not np.isnan(r_dlk[i]))
         valid_mask.append(is_valid)
 
     active_indices = [i for i, v in enumerate(valid_mask) if v]
@@ -99,11 +89,10 @@ def generate_bar_dual_custom(csv_path, title_label, y_label, output_filename, is
 
     data_series = [
         [r_lgmres[i] for i in active_indices],
-        [r_dlk[i] for i in active_indices],
-        [r_dlkl[i] for i in active_indices]
+        [r_dlk[i] for i in active_indices]
     ]
 
-    num_series = 3
+    num_series = 2
     num_active = len(active_ids)
     if num_active == 0:
         print(f"[Aviso] No hay suficientes problemas convergentes para {title_label}")
@@ -113,12 +102,11 @@ def generate_bar_dual_custom(csv_path, title_label, y_label, output_filename, is
     fig, ax = plt.subplots(figsize=(6.3, 3.35))
     fig.patch.set_facecolor('white')
 
-    # Paleta idéntica de MATLAB: gray_colors = [0.2 0.2 0.2; 0.5 0.5 0.5; 0.8 0.8 0.8]
-    colors = [(0.2, 0.2, 0.2), (0.5, 0.5, 0.5), (0.8, 0.8, 0.8)]
+    # Paleta escala de grises de 2 series: [0.3 0.3 0.3; 0.7 0.7 0.7]
+    colors = [(0.3, 0.3, 0.3), (0.7, 0.7, 0.7)]
     labels = [
         r'$\log(\mathrm{GMRES}(30)/\mathrm{LGMRES}(28,2))$',
-        r'$\log(\mathrm{GMRES}(30)/\mathrm{DMDc\text{-}LQR\text{-}GMRES})$',
-        r'$\log(\mathrm{GMRES}(30)/\mathrm{DMDc\text{-}LQR\text{-}LGMRES})$'
+        r'$\log(\mathrm{GMRES}(30)/\mathrm{DMDc\text{-}LQR\text{-}GMRES})$'
     ]
 
     bar_width = 0.8 / num_series
