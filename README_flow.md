@@ -8,32 +8,7 @@ Este documento detalla la evaluación experimental comparativa de la familia de 
 
 ---
 
-## 1. Fundamento Físico y Formulación Matemática
-
-### 1.1. Flujo en Medios Porosos Fracturados (Mixed-Dimensional Darcy Flow)
-La simulación de flujo en yacimientos subterráneos, almacenamiento de $\text{CO}_2$ y transporte de contaminantes involucra medios geológicos atravesados por fracturas cuya apertura transversal $\varepsilon \ll 1$ es órdenes de magnitud menor que la escala del dominio circundante ($\Omega \subset \mathbb{R}^2$).
-
-En el modelo dimensional mixto:
-* **Matriz rocosa ($\Omega \subset \mathbb{R}^2$):** Rige la ecuación estándar de conservación y ley de Darcy:
-  $$-\nabla \cdot (K_m \nabla p_m) = q_m \quad \text{en } \Omega$$
-* **Red de fracturas discretas ($\gamma \subset \mathbb{R}^1$):** Se modela como una variedad de codimensión 1 integrada a lo largo de la interfaz:
-  $$-\nabla_\tau \cdot (\varepsilon K_f \nabla_\tau p_f) + [K_m \nabla p_m \cdot n]_\gamma = q_f \quad \text{en } \gamma$$
-  donde $K_f$ es la permeabilidad de fractura, $\nabla_\tau$ es el gradiente tangencial y $[ \cdot ]_\gamma$ denota el salto de flujo a través de las caras de la fractura.
-
-### 1.2. Estructura Algebraica de Punto de Silla (Saddle-Point)
-La discretización mediante elementos finitos mixtos o acoplamientos con multiplicadores de Lagrange da lugar a un sistema algebraico global $A x = b$ con bloques diagonales nulos en las incógnitas de interfaz:
-$$A = \begin{bmatrix} A_{mm} & A_{m\gamma} \\ A_{\gamma m} & A_{\gamma\gamma} \end{bmatrix}$$
-Debido a estos ceros estructurales en la diagonal, los precondicionadores basados en factorizaciones incompletas estándar (como `ILU(0)` o `ICC`) fallan por división por cero (`Matrix is missing diagonal entry`). En consecuencia, los experimentos se conducen estrictamente sin precondicionador (`-pc_type none`), evaluando la capacidad intrínseca de los solucionadores Krylov para superar el estancamiento numérico.
-
-### 1.3. Regímenes Físicos según el Contraste de Permeabilidad ($K_f$)
-1. **Régimen de Barrera Impermeable ($K_f \in [10^{-8}, 10^{-4}]$):** La fractura actúa como un sello geológico casi perfecto que bloquea el paso transversal del fluido, generando gradientes de presión extremadamente pronunciados.
-2. **Régimen de Transición ($K_f = 10^{-2}$):** Permeabilidad de fractura comparable a la matriz circundante.
-3. **Régimen Homogéneo ($K_f = 10^{0}$):** Contraste nulo entre la roca y la fractura.
-4. **Régimen Conductor y Canales Preferenciales ($K_f \in [10^{2}, 10^{8}]$):** La fractura actúa como una autopista de drenaje rápido, canalizando la totalidad del flujo y polarizando el espectro de la matriz $A$.
-
----
-
-## 2. Inventario de Matrices de Prueba (`results/tables/matrix_info_flow.csv`)
+## 1. Inventario de Matrices de Prueba (`results/tables/matrix_info_flow.csv`)
 
 Todas las matrices poseen dimensión global idéntica $N = 11,089$ y $nnz = 76,208$ entradas no nulas, variando exclusivamente el contraste de permeabilidad $K_f$:
 
@@ -53,7 +28,7 @@ Todas las matrices poseen dimensión global idéntica $N = 11,089$ y $nnz = 76,2
 
 ---
 
-## 3. Resultados Experimentales Comparativos
+## 2. Resultados Experimentales Comparativos
 
 Condiciones de ensayo unificadas:
 * **Tolerancia de parada:** $\|r_k\|_2 / \|b\|_2 \le 10^{-9}$ (convergencia estricta).
@@ -93,19 +68,19 @@ Condiciones de ensayo unificadas:
 
 ---
 
-## 4. Gráficos Comparativos de Barras
+## 3. Gráficos Comparativos de Barras
 
 Los siguientes gráficos ilustran el comportamiento logarítmico de ciclos de reinicio y tiempo computacional a través de los 9 órdenes de magnitud de permeabilidad $K_f$:
 
-### 4.1. Ciclos de Reinicio vs Contraste de Permeabilidad
+### 3.1. Ciclos de Reinicio vs Contraste de Permeabilidad
 ![Ciclos Flow Benchmark](results/figures/bar_plot_flow_benchmark_cycles.png)
 
-### 4.2. Tiempo Computacional vs Contraste de Permeabilidad
+### 3.2. Tiempo Computacional vs Contraste de Permeabilidad
 ![Tiempo Flow Benchmark](results/figures/bar_plot_flow_benchmark_time.png)
 
 ---
 
-## 5. Dinámica de Rendimiento Multietapa y Adaptación de $m$
+## 4. Dinámica de Rendimiento Multietapa y Adaptación de $m$
 
 A continuación se presentan las figuras vectoriales de 3 paneles para cada una de las 9 matrices del benchmark de flujo. Cada figura reporta:
 1. **Panel Superior:** Decaimiento de la norma relativa del residuo $\|r_k\|_2 / \|b\|_2$ ciclo a ciclo.
@@ -114,8 +89,8 @@ A continuación se presentan las figuras vectoriales de 3 paneles para cada una 
 
 ---
 
-### 5.1. Caso $K_f = 10^{-8}$ (Barrera Casi Impermeable)
-Régimen de bloqueo de flujo transversal con contraste extremo de 8 órdenes de magnitud ($	ext{cond}_1(A) = 1.80 	imes 10^{11}$):
+### 4.1. Caso $K_f = 10^{-8}$ (Barrera Casi Impermeable)
+Régimen de bloqueo de flujo transversal con contraste extremo de 8 órdenes de magnitud ($\text{cond}_1(A) = 1.80 \times 10^{11}$):
 
 ![Performance Kf 1e-08](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e-08_with_m.png)
 
@@ -123,8 +98,8 @@ Régimen de bloqueo de flujo transversal con contraste extremo de 8 órdenes de 
 
 ---
 
-### 5.2. Caso $K_f = 10^{-6}$ (Fractura de Baja Permeabilidad)
-Régimen resistivo alto con flujo transversal restringido ($	ext{cond}_1(A) = 1.80 	imes 10^9$):
+### 4.2. Caso $K_f = 10^{-6}$ (Fractura de Baja Permeabilidad)
+Régimen resistivo alto con flujo transversal restringido ($\text{cond}_1(A) = 1.80 \times 10^9$):
 
 ![Performance Kf 1e-06](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e-06_with_m.png)
 
@@ -132,8 +107,8 @@ Régimen resistivo alto con flujo transversal restringido ($	ext{cond}_1(A) = 1.
 
 ---
 
-### 5.3. Caso $K_f = 10^{-4}$ (Fractura de Resistencia Moderada)
-Punto de inflexión donde se estabiliza la tasa de convergencia ($	ext{cond}_1(A) = 1.85 	imes 10^7$):
+### 4.3. Caso $K_f = 10^{-4}$ (Fractura de Resistencia Moderada)
+Punto de inflexión donde se estabiliza la tasa de convergencia ($\text{cond}_1(A) = 1.85 \times 10^7$):
 
 ![Performance Kf 1e-04](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e-04_with_m.png)
 
@@ -141,8 +116,8 @@ Punto de inflexión donde se estabiliza la tasa de convergencia ($	ext{cond}_1(A
 
 ---
 
-### 5.4. Caso $K_f = 10^{-2}$ (Transición Matriz-Fractura)
-Régimen donde el transporte difusivo en la matriz y en la fractura es comparable ($	ext{cond}_1(A) = 5.84 	imes 10^5$):
+### 4.4. Caso $K_f = 10^{-2}$ (Transición Matriz-Fractura)
+Régimen donde el transporte difusivo en la matriz y en la fractura es comparable ($\text{cond}_1(A) = 5.84 \times 10^5$):
 
 ![Performance Kf 1e-02](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e-02_with_m.png)
 
@@ -150,8 +125,8 @@ Régimen donde el transporte difusivo en la matriz y en la fractura es comparabl
 
 ---
 
-### 5.5. Caso $K_f = 10^{0}$ (Permeabilidad Homogénea)
-Caso de referencia homogéneo sin contraste entre matriz y fractura ($	ext{cond}_1(A) = 2.08 	imes 10^6$):
+### 4.5. Caso $K_f = 10^{0}$ (Permeabilidad Homogénea)
+Caso de referencia homogéneo sin contraste entre matriz y fractura ($\text{cond}_1(A) = 2.08 \times 10^6$):
 
 ![Performance Kf 1e+00](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e+00_with_m.png)
 
@@ -159,8 +134,8 @@ Caso de referencia homogéneo sin contraste entre matriz y fractura ($	ext{cond}
 
 ---
 
-### 5.6. Caso $K_f = 10^{2}$ (Fractura Moderadamente Conductora)
-Inicio del régimen de canalización preferencial ($	ext{cond}_1(A) = 2.03 	imes 10^8$):
+### 4.6. Caso $K_f = 10^{2}$ (Fractura Moderadamente Conductora)
+Inicio del régimen de canalización preferencial ($\text{cond}_1(A) = 2.03 \times 10^8$):
 
 ![Performance Kf 1e+02](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e+02_with_m.png)
 
@@ -168,8 +143,8 @@ Inicio del régimen de canalización preferencial ($	ext{cond}_1(A) = 2.03 	imes
 
 ---
 
-### 5.7. Caso $K_f = 10^{4}$ (Fractura Altamente Conductora)
-Canal de flujo dominante con alta polarización espectral ($	ext{cond}_1(A) = 9.15 	imes 10^9$):
+### 4.7. Caso $K_f = 10^{4}$ (Fractura Altamente Conductora)
+Canal de flujo dominante con alta polarización espectral ($\text{cond}_1(A) = 9.15 \times 10^9$):
 
 ![Performance Kf 1e+04](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e+04_with_m.png)
 
@@ -177,8 +152,8 @@ Canal de flujo dominante con alta polarización espectral ($	ext{cond}_1(A) = 9.
 
 ---
 
-### 5.8. Caso $K_f = 10^{6}$ (Canal Fuertemente Conductor)
-Régimen hiper-conductor donde la fractura actúa como cortocircuito hidráulico ($	ext{cond}_1(A) = 3.10 	imes 10^{11}$):
+### 4.8. Caso $K_f = 10^{6}$ (Canal Fuertemente Conductor)
+Régimen hiper-conductor donde la fractura actúa como cortocircuito hidráulico ($\text{cond}_1(A) = 3.10 \times 10^{11}$):
 
 ![Performance Kf 1e+06](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e+06_with_m.png)
 
@@ -186,8 +161,8 @@ Régimen hiper-conductor donde la fractura actúa como cortocircuito hidráulico
 
 ---
 
-### 5.9. Caso $K_f = 10^{8}$ (Canal de Flujo Hiper-Conductor)
-Límite asintótico de permeabilidad casi infinita ($	ext{cond}_1(A) = 3.00 	imes 10^{13}$):
+### 4.9. Caso $K_f = 10^{8}$ (Canal de Flujo Hiper-Conductor)
+Límite asintótico de permeabilidad casi infinita ($\text{cond}_1(A) = 3.00 \times 10^{13}$):
 
 ![Performance Kf 1e+08](results/figures/PerformanceofDMDcLQRGMRES_flow_Kf1e+08_with_m.png)
 
@@ -195,7 +170,7 @@ Límite asintótico de permeabilidad casi infinita ($	ext{cond}_1(A) = 3.00 	ime
 
 ---
 
-## 6. Conclusiones y Hallazgos Principales
+## 5. Conclusiones y Hallazgos Principales
 
 1. **Fracaso Sistemático de GMRES(30) Estándar:**
    Sin precondicionador, el método clásico GMRES(30) solo converge en 2 de las 9 matrices ($K_f = 10^{-2}, 10^0$), requiriendo más de 800 ciclos en ambas, y sufriendo estancamiento severo en contrastes bajos y breakdown numérico (`DIVERGED_BREAKDOWN`) en contrastes conductores ($K_f \ge 10^2$).
@@ -213,7 +188,7 @@ Límite asintótico de permeabilidad casi infinita ($	ext{cond}_1(A) = 3.00 	ime
 
 ---
 
-## 7. Instrucciones para Reproducir el Benchmark
+## 6. Instrucciones para Reproducir el Benchmark
 
 Para re-ejecutar el benchmark completo y regenerar todas las tablas y figuras:
 
