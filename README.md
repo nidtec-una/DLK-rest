@@ -221,13 +221,25 @@ Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/c
 #### Reducción en Tiempo Computacional Relativo
 ![Relative Computation Time](results/figures/bar_plot_Average_computation_relative_time.png)
 
-### B. Curvas de Convergencia Estilo SIAM (`orsirr1`)
-Generada con `python3 scripts/plot_comparison_of_methods.py`:
+### B. Curvas de Convergencia Estilo SIAM
+Comparación de la convergencia de residuales entre GMRES(30), LGMRES(28, 2) y DMDc-LQR-GMRES generada con `scripts/plot_comparison_of_methods.py`:
 
+#### B.1. Convergencia en Matriz `wang2`
+![Comparison of Methods wang2](results/figures/Comparisonofmethodswang2.png)
+
+#### B.2. Convergencia en Matriz `orsirr1`
 ![Comparison of Methods orsirr1](results/figures/Comparisonofmethodsorsirr1.png)
 
-### C. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
-Generada con `python3 scripts/plot_performance_with_m.py`:
+### C. Rendimiento Multietapa y Dinámica de $m$
+Análisis detallado en 3 paneles (decaimiento del residuo relativo $\|r_k\|/\|r_0\|$, error de reconstrucción DMDc $e = \|\hat{S} - S\|_F / \|S\|_F$, y evolución adaptativa del parámetro de reinicio $m_k$) generado con `scripts/plot_performance_with_m.py`:
+
+#### C.1. Rendimiento Multietapa y Dinámica de $m$ (`wang2`)
+Matriz moderadamente condicionada con estructura en bandas y espectro agrupado ($N = 2,903$, $m_{\max} = 290$). Tras la ventana de exploración inicial ($m_0 = 30$), el controlador DMDc-LQR ajusta óptimamente $m$ a su cota superior, logrando la convergencia en apenas 6 ciclos frente a los 93 requeridos por GMRES(30).
+
+![Performance DLK-GMRES wang2](results/figures/PerformanceofDMDcLQRGMRESmwang2_with_m.png)
+
+#### C.2. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
+Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR rompe la meseta de estancamiento de los primeros 5 ciclos elevando $m$ a $m_{\max} = 103$ (desplome exponencial del residuo de 0.57 a 0.037) y ajustando posteriormente $m$ a 89 y 53, reduciendo los ciclos de 158 a tan solo 26.
 
 ![Performance DLK-GMRES orsirr1](results/figures/PerformanceofDMDcLQRGMRESmorsirr1_with_m.png)
 
@@ -245,7 +257,7 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 ### B. Distinción Conceptual: Ciclos de Reinicio vs. Iteraciones Internas (`-ksp_max_it`)
 * **Comportamiento en MATLAB:** Los scripts del artículo (`GMRES_DMDc_LQR_fixp.m` y `test_collection.m`) iteran evaluando el límite de **ciclos externos** (`tot_cycles <= max_cycles`, usualmente 400 ciclos). Cada ciclo ejecuta $m$ pasos internos sin interferencia de un tope global de iteraciones.
 * **Comportamiento en PETSc:** La opción estándar `-ksp_max_it` gobierna el número total acumulado de **iteraciones Krylov** (`ksp->its`). Con la dimensión adaptativa $m_k \in [m_{\min}, m_{\max}]$ (donde $m_{\max} = \lfloor 0.10 \times N \rfloor$), para matrices como `ex40` ($N = 7,740$, $m_{\max} = 774$), un límite tradicional de `-ksp_max_it 12000` se agotaba tras apenas 32 ciclos, cortando prematuramente la convergencia (que requiere $\approx 58\text{--}83$ ciclos).
-* **Ajuste:** El driver y scripts de benchmarking calculan el límite de iteraciones de PETSc como $\max(50000, \text{max\_cycles} \times m_{\max})$, permitiendo que los algoritmos alcancen la convergencia óptima sin truncamiento artificial.
+* **Ajuste:** El driver y scripts de benchmarking calculan el límite de iteraciones de PETSc como `max(50000, max_cycles * m_max)` (equivalente analíticamente a $\max(50000, C_{\max} \times m_{\max})$ donde $C_{\max} = 400$ es el límite de ciclos externos), permitiendo que los algoritmos alcancen la convergencia óptima sin truncamiento artificial.
 
 ### C. Formulación de Riccati (CARE) y Acotado de $m$
 * **Resolución de CARE:** En MATLAB se invoca `lqr(H, B, Q, R)`. En PETSc (`src/dmdc_lqr.c`), se resolvió de forma nativa la Ecuación Algebraica de Riccati en Tiempo Continuo (CARE) mediante el formalismo Hamiltoniano de Laub (1979) utilizando descomposición espectral de LAPACK (`LAPACKgeev_`) y proyección sobre el subespacio controlable (`LAPACKgesvd_`) si el par $(\bar{H}, \bar{B})$ es no controlable con penalización $R_c = \alpha = 10^{-4}$ consistente con el sistema completo.

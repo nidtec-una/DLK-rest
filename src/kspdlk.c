@@ -331,12 +331,28 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
         PetscCall(VecNorm(V[0], NORM_2, &rnorm));
         ksp->rnorm = rnorm;
 
-        if (ksp->reason) break;
-        PetscCall((*ksp->converged)(ksp, ksp->its, rnorm, &ksp->reason, ksp->cnvP));
-        if (ksp->reason) break;
-
         PetscReal relres = (r0_norm > 1e-14) ? (rnorm / r0_norm) : rnorm;
         PetscReal dmdc_err = 0.0;
+
+        if (!ksp->reason) {
+            PetscCall((*ksp->converged)(ksp, ksp->its, rnorm, &ksp->reason, ksp->cnvP));
+        }
+
+        if (ksp->reason) {
+            /* Registrar ciclo final completado al alcanzar convergencia o criterio de parada */
+            if (dlk->cycle_history_size >= dlk->max_cycle_records) {
+                PetscInt new_cap = dlk->max_cycle_records * 2 + 10;
+                PetscCall(PetscRealloc(sizeof(PetscInt) * new_cap, &dlk->cycle_m_history));
+                PetscCall(PetscRealloc(sizeof(PetscReal) * new_cap, &dlk->cycle_relres_history));
+                PetscCall(PetscRealloc(sizeof(PetscReal) * new_cap, &dlk->cycle_dmdc_errors));
+                dlk->max_cycle_records = new_cap;
+            }
+            dlk->cycle_m_history[dlk->cycle_history_size]      = m;
+            dlk->cycle_relres_history[dlk->cycle_history_size] = relres;
+            dlk->cycle_dmdc_errors[dlk->cycle_history_size]    = 0.0;
+            dlk->cycle_history_size++;
+            break;
+        }
 
         /* Almacenar snapshot del ciclo */
         if (dlk->ctrl_type != DLK_CTRL_NONE) {
