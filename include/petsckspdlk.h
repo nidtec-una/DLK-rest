@@ -17,5 +17,6 @@ PETSC_EXTERN PetscErrorCode KSPDLKSetController(KSP ksp, DLKControllerType type)
 PETSC_EXTERN PetscErrorCode KSPDLKSetAlpha(KSP ksp, PetscReal alpha);
 PETSC_EXTERN PetscErrorCode KSPDLKSetRanks(KSP ksp, PetscInt p_samples, PetscInt q_rank, PetscInt t_rank);
 PETSC_EXTERN PetscErrorCode KSPDLKSetAugmentation(KSP ksp, PetscInt aug_l);
+PETSC_EXTERN PetscErrorCode KSPDLKGetCycleHistory(KSP ksp, PetscInt *num_cycles, const PetscInt **m_hist, const PetscReal **relres_hist, const PetscReal **dmdc_err_hist);
 
 #endif

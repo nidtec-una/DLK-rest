@@ -8,8 +8,17 @@ static PetscErrorCode KSPSetUp_DLK(KSP ksp)
 
     PetscFunctionBeginUser;
     if (dlk->aug_l < 0) dlk->aug_l = 0;
+
+    Mat A_mat;
+    PetscInt N_size;
+    PetscCall(PCGetOperators(ksp->pc, &A_mat, NULL));
+    PetscCall(MatGetSize(A_mat, &N_size, NULL));
+    PetscInt m_max_calc = (PetscInt)(0.10 * N_size);
+    if (dlk->m_max == 60 && m_max_calc > 60) {
+        dlk->m_max = m_max_calc;
+    }
     if (dlk->m_max < dlk->m_min) dlk->m_max = dlk->m_min + 10;
-    if (dlk->max_k < dlk->m_max + dlk->aug_l + 2) dlk->max_k = dlk->m_max + dlk->aug_l + 2;
+    dlk->max_k = PetscMax(dlk->max_k, dlk->m_max + dlk->aug_l + 10);
     dlk->m = dlk->m_initial;
 
     /* 1. Base ortonormal de Arnoldi V (max_k + 1 vectores) */
@@ -39,6 +48,13 @@ static PetscErrorCode KSPSetUp_DLK(KSP ksp)
     PetscCall(PetscCalloc1(dlk->max_snapshots, &dlk->cycle_rnorms));
     dlk->num_snapshots = 0;
     dlk->total_cycles = 0;
+
+    /* 5. Historial de diagnóstico por ciclo */
+    dlk->max_cycle_records = PetscMax(500, ksp->max_it + 10);
+    PetscCall(PetscCalloc1(dlk->max_cycle_records, &dlk->cycle_m_history));
+    PetscCall(PetscCalloc1(dlk->max_cycle_records, &dlk->cycle_relres_history));
+    PetscCall(PetscCalloc1(dlk->max_cycle_records, &dlk->cycle_dmdc_errors));
+    dlk->cycle_history_size = 0;
 
     PetscFunctionReturn(PETSC_SUCCESS);
 }
@@ -76,6 +92,12 @@ static PetscErrorCode KSPReset_DLK(KSP ksp)
     PetscCall(PetscFree(dlk->cycle_rnorms));
     dlk->num_snapshots = 0;
 
+    PetscCall(PetscFree(dlk->cycle_m_history));
+    PetscCall(PetscFree(dlk->cycle_relres_history));
+    PetscCall(PetscFree(dlk->cycle_dmdc_errors));
+    dlk->cycle_history_size = 0;
+    dlk->max_cycle_records = 0;
+
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
@@ -94,7 +116,7 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
     KSP_DLK     *dlk = (KSP_DLK *)ksp->data;
     Mat          A;
     Vec          b, x, w, *V;
-    PetscReal    rnorm, beta;
+    PetscReal    rnorm, beta, r0_norm;
     PetscScalar *hh, *rs, *y;
     PetscReal   *c, *s;
     PetscInt     m, i, j, k;
@@ -129,6 +151,18 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
     PetscCall(VecNorm(V[0], NORM_2, &rnorm));
     KSPCheckNorm(ksp, rnorm);
     ksp->rnorm = rnorm;
+
+    r0_norm = rnorm;
+    if (r0_norm < 1e-14) r0_norm = 1.0;
+
+    /* Registrar ciclo inicial 0 en historial de diagnóstico */
+    dlk->cycle_history_size = 0;
+    if (dlk->max_cycle_records > 0) {
+        dlk->cycle_m_history[0] = dlk->m;
+        dlk->cycle_relres_history[0] = 1.0;
+        dlk->cycle_dmdc_errors[0] = 0.0;
+        dlk->cycle_history_size = 1;
+    }
 
     PetscCall(KSPLogResidualHistory(ksp, rnorm));
     PetscCall(KSPMonitor(ksp, 0, rnorm));
@@ -293,7 +327,8 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
         PetscCall(VecNorm(V[0], NORM_2, &rnorm));
         ksp->rnorm = rnorm;
 
-        if (ksp->reason) break;
+        PetscReal relres = (r0_norm > 1e-14) ? (rnorm / r0_norm) : rnorm;
+        PetscReal dmdc_err = 0.0;
 
         /* Almacenar snapshot del ciclo */
         if (dlk->ctrl_type != DLK_CTRL_NONE) {
@@ -328,7 +363,7 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
 
                     PetscCall(DLK_DMDc_Identify(dlk->p_samples + 1, dlk->snapshots, dlk->inputs,
                                                 dlk->q_rank, dlk->t_rank,
-                                                Hbar, Bbar, xhat_end));
+                                                Hbar, Bbar, xhat_end, &dmdc_err));
 
                     PetscInt dim_sp = dlk->m;
                     PetscCall(DLK_UpdateByLQR(t, Hbar, Bbar, xhat_end, dlk->m, dlk->alpha_lqr, &dim_sp));
@@ -357,6 +392,25 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
             if (m_new > dlk->m_max) m_new = dlk->m_max;
             dlk->m = m_new;
         }
+
+        /* Registrar ciclo en historial de diagnóstico */
+        if (dlk->cycle_history_size >= dlk->max_cycle_records) {
+            PetscInt new_cap = dlk->max_cycle_records * 2 + 10;
+            PetscCall(PetscRealloc(sizeof(PetscInt) * new_cap, &dlk->cycle_m_history));
+            PetscCall(PetscRealloc(sizeof(PetscReal) * new_cap, &dlk->cycle_relres_history));
+            PetscCall(PetscRealloc(sizeof(PetscReal) * new_cap, &dlk->cycle_dmdc_errors));
+            dlk->max_cycle_records = new_cap;
+        }
+        dlk->cycle_m_history[dlk->cycle_history_size]      = m;
+        dlk->cycle_relres_history[dlk->cycle_history_size] = relres;
+        dlk->cycle_dmdc_errors[dlk->cycle_history_size]    = dmdc_err;
+        dlk->cycle_history_size++;
+
+        /* Verificar convergencia tras el ciclo */
+        if (!ksp->reason) {
+            PetscCall((*ksp->converged)(ksp, ksp->its, rnorm, &ksp->reason, ksp->cnvP));
+        }
+        if (ksp->reason) break;
     }
 
     if (ksp->its >= ksp->max_it && !ksp->reason) {
@@ -509,5 +563,28 @@ PetscErrorCode KSPDLKSetAugmentation(KSP ksp, PetscInt aug_l)
     KSP_DLK *dlk = (KSP_DLK *)ksp->data;
     PetscFunctionBeginUser;
     dlk->aug_l = aug_l;
+    PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode KSPDLKGetCycleHistory(KSP ksp, PetscInt *num_cycles, const PetscInt **m_hist, const PetscReal **relres_hist, const PetscReal **dmdc_err_hist)
+{
+    PetscBool is_dlk, is_dlk_lgmres;
+
+    PetscFunctionBeginUser;
+    PetscValidHeaderSpecific(ksp, KSP_CLASSID, 1);
+    PetscCall(PetscObjectTypeCompare((PetscObject)ksp, KSPDLK, &is_dlk));
+    PetscCall(PetscObjectTypeCompare((PetscObject)ksp, KSPDLKLGMRES, &is_dlk_lgmres));
+    if (!is_dlk && !is_dlk_lgmres) {
+        if (num_cycles)    *num_cycles    = 0;
+        if (m_hist)        *m_hist        = NULL;
+        if (relres_hist)   *relres_hist   = NULL;
+        if (dmdc_err_hist) *dmdc_err_hist = NULL;
+        PetscFunctionReturn(PETSC_SUCCESS);
+    }
+    KSP_DLK *dlk = (KSP_DLK *)ksp->data;
+    if (num_cycles)    *num_cycles    = dlk->cycle_history_size;
+    if (m_hist)        *m_hist        = dlk->cycle_m_history;
+    if (relres_hist)   *relres_hist   = dlk->cycle_relres_history;
+    if (dmdc_err_hist) *dmdc_err_hist = dlk->cycle_dmdc_errors;
     PetscFunctionReturn(PETSC_SUCCESS);
 }

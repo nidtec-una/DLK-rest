@@ -17,7 +17,8 @@ PETSC_EXTERN const char *const DLKControllerTypes[];
 /* Identificación DMDc a partir de los vectores de snapshot */
 PETSC_EXTERN PetscErrorCode DLK_DMDc_Identify(PetscInt num_snaps, Vec *snapshots, const PetscReal *inputs,
                                               PetscInt q_rank, PetscInt t_rank,
-                                              PetscReal *Hbar, PetscReal *Bbar, PetscReal *xhat_end);
+                                              PetscReal *Hbar, PetscReal *Bbar, PetscReal *xhat_end,
+                                              PetscReal *dmdc_error);
 
 /* Ley de control LQR basada en la ecuación algebraica discreta de Riccati (DARE) */
 PETSC_EXTERN PetscErrorCode DLK_UpdateByLQR(PetscInt t, const PetscReal *Hbar, const PetscReal *Bbar,

@@ -34,6 +34,13 @@ typedef struct {
     PetscReal        *cycle_rnorms;   /* Registro de normas de residuos al final de cada ciclo */
     PetscInt          total_cycles;   /* Contador acumulado de ciclos de reinicio */
 
+    /* Diagnóstico completo ciclo a ciclo (para curvas de performance con m) */
+    PetscInt         *cycle_m_history;       /* Historial de m en cada ciclo */
+    PetscReal        *cycle_relres_history;  /* Historial de residuo relativo ||r_k||/||r_0|| */
+    PetscReal        *cycle_dmdc_errors;     /* Error de reconstrucción DMDc e = ||S - S_hat||_F/||S||_F */
+    PetscInt          cycle_history_size;    /* Número de ciclos registrados */
+    PetscInt          max_cycle_records;     /* Capacidad asignada */
+
     /* --- Base ortonormal de Arnoldi y matrices densas de proyección --- */
     Vec              *V;              /* Base ortonormal de Arnoldi [v_0, v_1, ..., v_{max_k}] */
     PetscScalar      *hh;             /* Matriz de Hessenberg almacenada por columnas */

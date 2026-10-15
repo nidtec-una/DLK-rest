@@ -14,8 +14,9 @@ int main(int argc, char **argv)
     PetscInt       its;
     PetscLogDouble t1, t2;
     KSPType        type;
-    PetscBool      save_hist = PETSC_FALSE, has_matrix = PETSC_FALSE;
+    PetscBool      save_hist = PETSC_FALSE, has_matrix = PETSC_FALSE, save_cycles = PETSC_FALSE;
     char           hist_file[PETSC_MAX_PATH_LEN] = "";
+    char           cycle_file[PETSC_MAX_PATH_LEN] = "";
     char           matrix_file[PETSC_MAX_PATH_LEN] = "";
 
     PetscFunctionBeginUser;
@@ -30,6 +31,7 @@ int main(int argc, char **argv)
     PetscCall(PetscOptionsGetInt(NULL, NULL, "-n", &n, NULL));
     PetscCall(PetscOptionsGetReal(NULL, NULL, "-tol", &tol, NULL));
     PetscCall(PetscOptionsGetString(NULL, NULL, "-history_file", hist_file, sizeof(hist_file), &save_hist));
+    PetscCall(PetscOptionsGetString(NULL, NULL, "-cycle_file", cycle_file, sizeof(cycle_file), &save_cycles));
 
     if (has_matrix) {
         /* Cargar matriz A y vector b desde archivo binario de PETSc */
@@ -151,6 +153,38 @@ int main(int argc, char **argv)
                 }
                 fclose(fp);
                 PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Historial de residuos exportado a: %s\n\n", hist_file));
+            }
+        }
+    }
+
+    /* Exportar historial de ciclos si se solicitó */
+    if (save_cycles) {
+        PetscMPIInt rank;
+        PetscCallMPI(MPI_Comm_rank(PETSC_COMM_WORLD, &rank));
+        if (rank == 0) {
+            PetscInt         num_cycles = 0;
+            const PetscInt  *m_hist = NULL;
+            const PetscReal *relres_hist = NULL;
+            const PetscReal *dmdc_err_hist = NULL;
+            PetscErrorCode   ierr;
+
+            ierr = KSPDLKGetCycleHistory(ksp, &num_cycles, &m_hist, &relres_hist, &dmdc_err_hist);
+            if (!ierr && num_cycles > 0) {
+                FILE *fpc = fopen(cycle_file, "w");
+                if (fpc) {
+                    fprintf(fpc, "cycle,m,rel_residual,dmdc_error\n");
+                    for (PetscInt c = 0; c < num_cycles; c++) {
+                        fprintf(fpc, "%d,%d,%1.16e,%1.16e\n",
+                                (int)c,
+                                m_hist ? (int)m_hist[c] : 0,
+                                relres_hist ? (double)relres_hist[c] : 0.0,
+                                dmdc_err_hist ? (double)dmdc_err_hist[c] : 0.0);
+                    }
+                    fclose(fpc);
+                    PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Historial de ciclos exportado a: %s\n\n", cycle_file));
+                }
+            } else {
+                PetscCall(PetscPrintf(PETSC_COMM_WORLD, " [Aviso] No hay historial de ciclos disponible para este solver.\n\n"));
             }
         }
     }
