@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     PetscCall(KSPSetOperators(ksp, A, A));
     PetscCall(KSPSetTolerances(ksp, tol, PETSC_DEFAULT, PETSC_DEFAULT, 2000));
 
-    if (save_hist) {
+    if (save_hist || save_cycles) {
         PetscCall(KSPSetResidualHistory(ksp, NULL, PETSC_DECIDE, PETSC_TRUE));
     }
 
@@ -198,7 +198,32 @@ int main(int argc, char **argv)
                     PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Historial de ciclos exportado a: %s\n\n", cycle_file));
                 }
             } else {
-                PetscCall(PetscPrintf(PETSC_COMM_WORLD, " [Aviso] No hay historial de ciclos disponible para este solver.\n\n"));
+                /* Si es solver nativo (GMRES/LGMRES), reconstruir ciclo a ciclo desde el historial de residuos */
+                const PetscReal *hist = NULL;
+                PetscInt        num_hist = 0;
+                PetscInt        restart_m = 30;
+                PetscCall(PetscOptionsGetInt(NULL, NULL, "-ksp_gmres_restart", &restart_m, NULL));
+                PetscCall(PetscOptionsGetInt(NULL, NULL, "-ksp_lgmres_restart", &restart_m, NULL));
+                PetscCall(KSPGetResidualHistory(ksp, &hist, &num_hist));
+                if (num_hist > 0 && hist && restart_m > 0) {
+                    FILE *fpc = fopen(cycle_file, "w");
+                    if (fpc) {
+                        PetscReal r0 = hist[0] > 0.0 ? hist[0] : 1.0;
+                        fprintf(fpc, "cycle,m,rel_residual,dmdc_error\n");
+                        PetscInt c = 0;
+                        for (PetscInt it = 0; it < num_hist; it += restart_m) {
+                            fprintf(fpc, "%d,%d,%1.16e,0.0\n", (int)c, (int)restart_m, (double)(hist[it] / r0));
+                            c++;
+                        }
+                        if ((num_hist - 1) % restart_m != 0) {
+                            fprintf(fpc, "%d,%d,%1.16e,0.0\n", (int)c, (int)restart_m, (double)(hist[num_hist - 1] / r0));
+                        }
+                        fclose(fpc);
+                        PetscCall(PetscPrintf(PETSC_COMM_WORLD, " Historial de ciclos (reconstruido) exportado a: %s\n\n", cycle_file));
+                    }
+                } else {
+                    PetscCall(PetscPrintf(PETSC_COMM_WORLD, " [Aviso] No hay historial de ciclos disponible para este solver.\n\n"));
+                }
             }
         }
     }
