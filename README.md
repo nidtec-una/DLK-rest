@@ -156,55 +156,55 @@ Evaluación comparativa integral de los tres solucionadores Krylov evaluados en 
 
 | Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) |
 | :---: | :--- | :---: | :---: | :---: |
-| 1 | `add20` | 35 | 21 | **7** |
-| 2 | `cavity05` | NC | 80 | **7** |
-| 3 | `cavity10` | NC | 127 | **9** |
-| 4 | `cdde1` | 33 | 28 | **7** |
-| 5 | `circuit2` | 25 | 20 | **6** |
-| 6 | `ex40` | NC | NC | **61** |
-| 7 | `fpgatrans01` | 104 | 35 | **9** |
-| 8 | `memplus` | 93 | 49 | **6** |
-| 9 | `orsirr1` | 158 | 78 | **26** |
-| 10 | `orsreg1` | 23 | 19 | **7** |
-| 11 | `pde2961` | 13 | 22 | **6** |
-| 12 | `raefsky1` | 172 | 27 | **6** |
-| 13 | `raefsky2` | 149 | 83 | **11** |
-| 14 | `rdb2048` | 16 | 13 | **6** |
-| 15 | `sherman1` | 123 | 27 | **16** |
-| 16 | `sherman4` | 26 | 16 | **7** |
-| 17 | `sherman5` | NC | NC | **29** |
-| 18 | `steam2` | 14 | 23 | **7** |
-| 19 | `wang2` | 93 | 29 | **6** |
-| 20 | `wang4` | 94 | NC | **6** |
-| 21 | `watt1` | 137 | 26 | **12** |
-| 22 | `young3c` | 342 | 104 | **57** |
+| 1 | `add20` | 35 | 21 | **8** |
+| 2 | `cavity05` | NC | 80 | **9** |
+| 3 | `cavity10` | NC | 127 | **28** |
+| 4 | `cdde1` | 33 | **28** | 88 |
+| 5 | `circuit2` | 25 | 20 | **7** |
+| 6 | `ex40` | NC | NC | **83** |
+| 7 | `fpgatrans01` | 104 | 35 | **14** |
+| 8 | `memplus` | 93 | 49 | **8** |
+| 9 | `orsirr1` | 158 | 78 | **52** |
+| 10 | `orsreg1` | 23 | 19 | **18** |
+| 11 | `pde2961` | **13** | 22 | 32 |
+| 12 | `raefsky1` | 172 | **27** | 33 |
+| 13 | `raefsky2` | 149 | 83 | **78** |
+| 14 | `rdb2048` | 16 | **13** | 19 |
+| 15 | `sherman1` | 123 | 27 | **18** |
+| 16 | `sherman4` | 26 | 16 | **12** |
+| 17 | `sherman5` | NC | NC | **52** |
+| 18 | `steam2` | 14 | 23 | **13** |
+| 19 | `wang2` | 93 | 29 | **24** |
+| 20 | `wang4` | 94 | NC | **36** |
+| 21 | `watt1` | 137 | 26 | **25** |
+| 22 | `young3c` | 342 | 104 | **92** |
 
 ### Tabla 3: Tiempo Computacional Promedio en Segundos (`results/tables/avg_relativa_time_experiment.csv`)
 
 | Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) |
 | :---: | :--- | :---: | :---: | :---: |
-| 1 | `add20` | 0.1253 | **0.0369** | 0.0761 |
-| 2 | `cavity05` | NC | 0.1260 | **0.0204** |
-| 3 | `cavity10` | NC | 0.4722 | **0.3611** |
-| 4 | `cdde1` | 0.0225 | 0.0202 | **0.0120** |
-| 5 | `circuit2` | 0.0826 | **0.0577** | 0.0669 |
-| 6 | `ex40` | NC | NC | **98.1825** |
-| 7 | `fpgatrans01` | 0.0627 | **0.0210** | 0.0220 |
-| 8 | `memplus` | 1.0698 | **0.5176** | 2.9338 |
-| 9 | `orsirr1` | 0.1150 | **0.0518** | 0.0679 |
-| 10 | `orsreg1` | 0.0371 | **0.0255** | 0.0527 |
-| 11 | `pde2961` | **0.0289** | 0.0389 | 0.0405 |
-| 12 | `raefsky1` | 2.2357 | 0.3055 | **0.2631** |
-| 13 | `raefsky2` | 2.4605 | 1.2293 | **0.4055** |
-| 14 | `rdb2048` | 0.0279 | **0.0211** | 0.0214 |
-| 15 | `sherman1` | 0.0872 | **0.0180** | 0.0468 |
-| 16 | `sherman4` | 0.0250 | 0.0120 | **0.0114** |
-| 17 | `sherman5` | NC | NC | **4.1707** |
-| 18 | `steam2` | 0.0085 | 0.0119 | **0.0069** |
-| 19 | `wang2` | 0.2086 | **0.0619** | 0.1329 |
-| 20 | `wang4` | **2.3481** | NC | 4.1459 |
-| 21 | `watt1` | 0.1869 | **0.0327** | 0.0582 |
-| 22 | `young3c` | 0.2183 | **0.0574** | 0.1315 |
+| 1 | `add20` | 0.0398 | 0.0158 | **0.0154** |
+| 2 | `cavity05` | NC | 0.0918 | **0.0126** |
+| 3 | `cavity10` | NC | 0.4602 | **0.3974** |
+| 4 | `cdde1` | 0.0251 | **0.0176** | 0.0240 |
+| 5 | `circuit2` | 0.1103 | 0.0861 | **0.0785** |
+| 6 | `ex40` | NC | NC | **83.1844** |
+| 7 | `fpgatrans01` | 0.1022 | 0.0325 | **0.0309** |
+| 8 | `memplus` | 1.5224 | **0.7385** | 0.8714 |
+| 9 | `orsirr1` | 0.1447 | **0.0612** | 0.0905 |
+| 10 | `orsreg1` | 0.0472 | **0.0308** | 0.0336 |
+| 11 | `pde2961` | **0.0302** | 0.0462 | 0.0359 |
+| 12 | `raefsky1` | 2.7551 | **0.3022** | 0.5351 |
+| 13 | `raefsky2` | 2.2351 | 1.1091 | **0.5589** |
+| 14 | `rdb2048` | 0.0273 | 0.0207 | **0.0186** |
+| 15 | `sherman1` | 0.0724 | **0.0150** | 0.0393 |
+| 16 | `sherman4` | 0.0260 | 0.0145 | **0.0106** |
+| 17 | `sherman5` | NC | NC | **3.0435** |
+| 18 | `steam2` | 0.0089 | 0.0088 | **0.0078** |
+| 19 | `wang2` | 0.1683 | **0.0558** | 0.0769 |
+| 20 | `wang4` | **1.6055** | NC | 4.3204 |
+| 21 | `watt1` | 0.1920 | **0.0333** | 0.0597 |
+| 22 | `young3c` | 0.2190 | **0.0604** | 0.0844 |
 
 ---
 
@@ -234,12 +234,12 @@ Comparación de la convergencia de residuales entre GMRES(30), LGMRES(28, 2) y D
 Análisis detallado en 3 paneles (decaimiento del residuo relativo $\|r_k\|/\|r_0\|$, error de reconstrucción DMDc $e = \|\hat{S} - S\|_F / \|S\|_F$, y evolución adaptativa del parámetro de reinicio $m_k$) generado con `scripts/plot_performance_with_m.py`:
 
 #### C.1. Rendimiento Multietapa y Dinámica de $m$ (`young3c`)
-Matriz acústica/estructural ($N = 841$, $\text{cond}(A) = 1.15 \times 10^4$, $m_{\max} = 84$). Permite apreciar la actuación sostenida del controlador a lo largo de un horizonte extenso de 58 ciclos (11 evaluaciones de snapshot DMDc). Tras la fase inicial con $m_0 = 30$, el controlador LQR detecta el régimen lento y eleva $m_k$ a $m_{\max} = 84$, manteniendo errores de reconstrucción DMDc extremadamente bajos ($e \in [10^{-12}, 10^{-10}]$) y reduciendo drásticamente los ciclos de 342 en GMRES(30) y 104 en LGMRES(28, 2) a solo **58 ciclos**.
+Matriz acústica/estructural ($N = 841$, $\text{cond}(A) = 1.15 \times 10^4$, $m_{\max} = 84$). Permite apreciar la actuación sostenida y rica del controlador a lo largo de 92 ciclos (18 evaluaciones consecutivas de snapshot DMDc). Tras la fase inicial con $m_0 = 30$, el controlador LQR ajusta $m_k$ de forma continua entre valores altos ($m \in [62, 84]$) durante las fases de estancamiento espectral y valores moderados/bajos ($m \in [12, 34]$) durante los regímenes de rápido descenso, manteniendo errores de reconstrucción DMDc extremadamente bajos ($e \in [10^{-12}, 10^{-10}]$) y reduciendo drásticamente los ciclos de 342 en GMRES(30) y 104 en LGMRES(28, 2) a solo **92 ciclos**.
 
 ![Performance DLK-GMRES young3c](results/figures/PerformanceofDMDcLQRGMRESmyoung3c_with_m.png)
 
 #### C.2. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
-Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR rompe la meseta de estancamiento de los primeros 5 ciclos elevando $m$ a $m_{\max} = 103$ (desplome exponencial del residuo de 0.57 a 0.037) y ajustando posteriormente $m$ a 89 y 53, reduciendo los ciclos de 158 a tan solo 26.
+Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR exhibe una respuesta altamente adaptativa: eleva $m$ en las fases de lenta contracción ($30 \to 42 \to 90 \to 103$), desplomando el residuo, y posteriormente reduce $m$ progresivamente (llegando a $m=2, 6, 8, 17$) para economizar el costo computacional de ortogonalización cuando el residuo decae favorablemente, requiriendo un total de **52 ciclos** frente a los 158 de GMRES(30) y 78 de LGMRES(28, 2).
 
 ![Performance DLK-GMRES orsirr1](results/figures/PerformanceofDMDcLQRGMRESmorsirr1_with_m.png)
 
@@ -260,7 +260,8 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 * **Ajuste:** El driver y scripts de benchmarking calculan el límite de iteraciones de PETSc como `max(50000, max_cycles * m_max)` (equivalente analíticamente a $\max(50000, C_{\max} \times m_{\max})$ donde $C_{\max} = 400$ es el límite de ciclos externos), permitiendo que los algoritmos alcancen la convergencia óptima sin truncamiento artificial.
 
 ### C. Formulación de Riccati (CARE) y Acotado de $m$
-* **Resolución de CARE:** En MATLAB se invoca `lqr(H, B, Q, R)`. En PETSc (`src/dmdc_lqr.c`), se resolvió de forma nativa la Ecuación Algebraica de Riccati en Tiempo Continuo (CARE) mediante el formalismo Hamiltoniano de Laub (1979) utilizando descomposición espectral de LAPACK (`LAPACKgeev_`) y proyección sobre el subespacio controlable (`LAPACKgesvd_`) si el par $(\bar{H}, \bar{B})$ es no controlable con penalización $R_c = \alpha = 10^{-4}$ consistente con el sistema completo.
+* **Resolución de CARE y Coordenadas Controlables:** En MATLAB se invoca `lqr(H, B, Q, R)`. Cuando el par identificado $(\bar{H}, \bar{B})$ es no completamente controlable ($r < t$, común en modelos de orden reducido DMDc), la rutina de MATLAB (`updatebyLQR.m`) proyecta el sistema sobre el subespacio controlable $T \in \mathbb{R}^{t \times r}$ ($H_c = T^T \bar{H} T$, $B_c = T^T \bar{B}$) y penaliza con $Q_c = I_r$ y $R_c = I_1 = 1.0$ (`Rc = eye(size(Bc,2))`).
+* **Sincronización Numérica:** En la implementación en C (`src/dmdc_lqr.c`), se resolvió la ecuación algebraica de Riccati en tiempo continuo (CARE) vía descomposición espectral Hamiltoniana (Laub, 1979). Al fijar con exactitud $R_c = 1.0$ en el subespacio controlable (en lugar de una penalización artificialmente pequeña $\alpha = 10^{-4}$ que inflaba la ganancia $K_c$ en 4 órdenes de magnitud saturando $m$ permanentemente en $m_{\max}$), el controlador recupera su auténtica dinámica adaptativa multietapa, oscilando y reduciendo $m$ cuando el progreso es favorable y aumentándolo ante estancamientos.
 * **Descuento de Enriquecimiento en LGMRES:** De manera exacta a la formulación teórica del artículo (`LGMRES_DMDc_LQR_fixp.m`), cuando se utiliza `dlk_lgmres` con $\ell$ vectores de enriquecimiento, el tamaño del subespacio Krylov estándar se ajusta a $m_k - \ell$, manteniendo constante la dimensión proyectada total y preservando la correspondencia matemática con MATLAB.
 
 ### D. Criterio de Residuo y Ausencia de Precondicionador
@@ -274,7 +275,7 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
   La matriz `orsirr1` ($N = 1,030$, $nnz = 6,858$, $\text{cond}(A) = 1.6720 \times 10^5$) ilustra de forma paradigmática la acción óptima del controlador DMDc-LQR:
   - **GMRES(30):** Sufre severo estancamiento por dimensión insuficiente de Krylov, requiriendo **158 ciclos** (4,726 iteraciones internas) para alcanzar $\|r_k\|/\|r_0\| \le 10^{-9}$.
   - **LGMRES(28, 2):** Con 2 vectores de enriquecimiento, atenúa el estancamiento pero requiere **78 ciclos** (2,182 iteraciones).
-  - **DMDc–LQR–GMRES:** Inicia con la ventana de exploración $m_0 = 30$ durante los primeros 5 ciclos (donde el residuo apenas decrece de $1.0$ a $0.57$). Al completar el snapshot en el ciclo 5 con un error de reconstrucción DMDc del orden de $10^{-12}$, la solución de CARE detecta el régimen lento y eleva $m$ de inmediato a $m_{\max} = 103$. Esto provoca un **desplome exponencial del residuo de $0.57$ a $0.037$** en un solo ciclo, rompiendo la meseta. Posteriormente, al observar una convergencia sostenida, el controlador reduce gradualmente $m$ a $89$ y luego a $53$ para economizar ortogonalizaciones, convergiendo en tan solo **26 ciclos** (1,919 iteraciones).
+  - **DMDc–LQR–GMRES:** Inicia con la ventana de exploración $m_0 = 30$ durante los primeros 5 ciclos. Con el modelo DMDc identificado ($e \sim 10^{-12}$), el controlador LQR modula $m_k$ a través de una rica trayectoria ($30 \to 42 \to 90 \to 103 \to 77 \to 2 \to 6 \to 8 \to 17 \to 97$). Al quebrar la meseta, el controlador desciende $m$ drásticamente a fin de ahorrar ortogonalizaciones por ciclo, convergiendo en **52 ciclos** (2,003 iteraciones), replicando con exactitud los 52 ciclos observados en MATLAB.
 * **Consistencia y Reproducibilidad:**
   El script dedicado ([`scripts/run_orsirr1_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_orsirr1_experiment.py)) reproduce estos resultados exactos sin precondicionador (`-pc_type none`), regenerando automáticamente las figuras vectoriales para publicación.
 

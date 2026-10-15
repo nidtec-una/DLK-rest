@@ -590,8 +590,8 @@ PetscErrorCode DLK_UpdateByLQR(PetscInt t, const PetscReal *Hbar, const PetscRea
             Bc[i] = sum;
         }
 
-        /* Resolver CARE en subespacio con Rc = alpha consistente con el sistema completo */
-        PetscErrorCode err = DLK_SolveCARE(r, Hc, Bc, alpha, NULL, Kc);
+        /* Resolver CARE en subespacio con Rc = 1.0 (exactamente como en MATLAB: Rc = eye(size(Bc,2))) */
+        PetscErrorCode err = DLK_SolveCARE(r, Hc, Bc, 1.0, NULL, Kc);
         if (!err) {
             /* xhatc = T^T * xhat */
             PetscReal *xhatc;
