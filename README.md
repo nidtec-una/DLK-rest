@@ -224,8 +224,8 @@ Generados automáticamente por [`scripts/plot_benchmark_bars.py`](file:///home/c
 ### B. Curvas de Convergencia Estilo SIAM
 Comparación de la convergencia de residuales entre GMRES(30), LGMRES(28, 2) y DMDc-LQR-GMRES generada con `scripts/plot_comparison_of_methods.py`:
 
-#### B.1. Convergencia en Matriz `wang2`
-![Comparison of Methods wang2](results/figures/Comparisonofmethodswang2.png)
+#### B.1. Convergencia en Matriz `young3c`
+![Comparison of Methods young3c](results/figures/Comparisonofmethodsyoung3c.png)
 
 #### B.2. Convergencia en Matriz `orsirr1`
 ![Comparison of Methods orsirr1](results/figures/Comparisonofmethodsorsirr1.png)
@@ -233,10 +233,10 @@ Comparación de la convergencia de residuales entre GMRES(30), LGMRES(28, 2) y D
 ### C. Rendimiento Multietapa y Dinámica de $m$
 Análisis detallado en 3 paneles (decaimiento del residuo relativo $\|r_k\|/\|r_0\|$, error de reconstrucción DMDc $e = \|\hat{S} - S\|_F / \|S\|_F$, y evolución adaptativa del parámetro de reinicio $m_k$) generado con `scripts/plot_performance_with_m.py`:
 
-#### C.1. Rendimiento Multietapa y Dinámica de $m$ (`wang2`)
-Matriz moderadamente condicionada con estructura en bandas y espectro agrupado ($N = 2,903$, $m_{\max} = 290$). Tras la ventana de exploración inicial ($m_0 = 30$), el controlador DMDc-LQR ajusta óptimamente $m$ a su cota superior, logrando la convergencia en apenas 6 ciclos frente a los 93 requeridos por GMRES(30).
+#### C.1. Rendimiento Multietapa y Dinámica de $m$ (`young3c`)
+Matriz acústica/estructural ($N = 841$, $\text{cond}(A) = 1.15 \times 10^4$, $m_{\max} = 84$). Permite apreciar la actuación sostenida del controlador a lo largo de un horizonte extenso de 58 ciclos (11 evaluaciones de snapshot DMDc). Tras la fase inicial con $m_0 = 30$, el controlador LQR detecta el régimen lento y eleva $m_k$ a $m_{\max} = 84$, manteniendo errores de reconstrucción DMDc extremadamente bajos ($e \in [10^{-12}, 10^{-10}]$) y reduciendo drásticamente los ciclos de 342 en GMRES(30) y 104 en LGMRES(28, 2) a solo **58 ciclos**.
 
-![Performance DLK-GMRES wang2](results/figures/PerformanceofDMDcLQRGMRESmwang2_with_m.png)
+![Performance DLK-GMRES young3c](results/figures/PerformanceofDMDcLQRGMRESmyoung3c_with_m.png)
 
 #### C.2. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
 Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR rompe la meseta de estancamiento de los primeros 5 ciclos elevando $m$ a $m_{\max} = 103$ (desplome exponencial del residuo de 0.57 a 0.037) y ajustando posteriormente $m$ a 89 y 53, reduciendo los ciclos de 158 a tan solo 26.
@@ -298,7 +298,8 @@ python3 scripts/run_all_22_benchmark.py
 # 4. Generar los gráficos de barras comparativos (análogos a LaTeX):
 python3 scripts/plot_benchmark_bars.py
 
-# 5. Ejecutar experimento orsirr1 y generar figuras para publicación:
+# 5. Ejecutar experimentos individuales y generar figuras para publicación:
+python3 scripts/run_young3c_experiment.py
 python3 scripts/run_orsirr1_experiment.py
 ```
 
