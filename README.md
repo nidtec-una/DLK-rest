@@ -241,6 +241,26 @@ Matriz acústica/estructural ($N = 841$, $\text{cond}(A) = 1.15 \times 10^4$, $m
 
 ![Performance DLK-GMRES young3c](results/figures/PerformanceofDMDcLQRGMRESmyoung3c_with_m.png)
 
+#### C.1.1. Dinámica Causal, Lazo de Realimentación y Delay de Muestreo en DMDc-LQR (`young3c`)
+
+La siguiente figura experimental ilustra la dinámica de realimentación en lazo cerrado, la identificación reducida multietapa y el retardo causal de lote ($\Delta k = p = 5$ ciclos) a lo largo de los 92 ciclos de convergencia de `young3c`:
+
+![Causal Feedback Dynamics in DMDc-LQR young3c](results/figures/Performance_causal_dynamics_young3c.png)
+
+##### Mecanismo de Realimentación y Retardo Causal ($\Delta k = p$):
+1. **Lote de Muestreo 1 (Batch 1, $k \in [0, 5]$, con $m_0 = 30$):**
+   * El algoritmo GMRES ejecuta los primeros $p = 5$ ciclos con el parámetro inicial $m_0 = 30$, reduciendo el residuo relativo de $1.0$ a $7.77 \times 10^{-3}$.
+   * En la frontera $k = 5$, el algoritmo DMDc identifica los operadores $(\bar{H}_1, \bar{B}_1)$ a partir de la matriz de snapshots $\mathcal{S}_1$, obteniendo un error de reconstrucción relativo $e_1 = 1.31 \times 10^{-12}$.
+   * Inmediatamente en $k = 5$, el regulador LQR resuelve la ecuación de Riccati (CARE) sobre el modelo $\mathcal{M}_1$, determinando un incremento sustancial a $m_1 = 76$ para capturar la rica base acústica de la matriz.
+2. **Acción de Control Diferida y Lote 2 (Batch 2, $k \in [5, 10]$, con $m_1 = 76$):**
+   * **Retardo de lote (Batch delay $\Delta k = p = 5$):** Los datos muestreados durante $[0, 5]$ determinan la acción de control que entra en vigor exclusivamente en el batch posterior $k \in [5, 10]$ (reflejada en el salto vertical de $m$ a $76$ y guiada por la flecha de causalidad inter-panel en $k=5$).
+   * Con la base ampliada a $m_1 = 76$, el residuo se contrae sostenidamente hasta $1.82 \times 10^{-3}$ en $k = 10$.
+3. **Identificación de Lote 2 y Modulación en Lote 3 (Batch 3, $k = 10 \to k \in [10, 15]$):**
+   * En $k = 10$, a partir de los residuos generados con $m_1 = 76$, se identifica el modelo $\mathcal{M}_2$ ($e_2 = 2.07 \times 10^{-11}$).
+   * El controlador LQR detecta la favorable estabilidad del subespacio y modula la dimensión a $m_2 = 51$ para balancear contracción y coste de ortogonalización en el Batch 3.
+4. **Modulación Multietapa Sostenida (Batch 4 en adelante):**
+   * En $k = 15$, LQR selecciona $m_3 = 34$, seguido de sucesivas modulaciones adaptativas ($m \in [12, 84]$) a través de 18 batches consecutivos de identificación DMDc, manteniendo errores de modelo en el rango $10^{-13}\text{--}10^{-10}$ hasta cerrar la convergencia final en el ciclo 91 ($m = 84$, $\|r_{91}\|/\|r_0\| = 9.75 \times 10^{-10}$).
+
 #### C.2. Rendimiento Multietapa y Dinámica de $m$ (`orsirr1`)
 Matriz irregular con anisotropías direccionales procedentes de yacimientos petrolíferos ($N = 1,030$, $m_{\max} = 103$). El controlador DMDc-LQR exhibe una respuesta altamente adaptativa: eleva $m$ en las fases de lenta contracción ($30 \to 42 \to 90 \to 103$), desplomando el residuo, y posteriormente reduce $m$ progresivamente (llegando a $m=2, 6, 8, 17$) para economizar el costo computacional de ortogonalización cuando el residuo decae favorablemente, requiriendo un total de **52 ciclos** frente a los 158 de GMRES(30) y 78 de LGMRES(28, 2).
 
@@ -272,6 +292,28 @@ Para comprender la física del control adaptativo y la interacción funcional en
 Matriz moderadamente condicionada con estructura en bandas y espectro agrupado ($N = 2,903$, $\text{cond}(A) = 3.18 \times 10^4$, $m_{\max} = 290$). Tras el lote de exploración inicial (Batch 1 con $m_0 = 30$), el controlador DMDc-LQR exhibe una modulación bidireccional paradigmática: eleva $m$ a $57$ para quebrar la meseta inicial (reduciendo el residuo de $0.3468$ a $8.29 \times 10^{-5}$), reduce luego $m$ drásticamente a $12$ durante el tramo de descenso sostenido para economizar ortogonalizaciones, y finalmente vuelve a elevar $m$ a $63$ y $59$ para cerrar la convergencia en **24 ciclos** (frente a los 93 de GMRES(30) y 29 de LGMRES(28, 2)), con errores de reconstrucción DMDc del orden de $10^{-13}\text{--}10^{-11}$.
 
 ![Performance DLK-GMRES wang2](results/figures/PerformanceofDMDcLQRGMRESmwang2_with_m.png)
+
+#### C.3.1. Dinámica Causal, Lazo de Realimentación y Delay de Muestreo en DMDc-LQR (`wang2`)
+
+La siguiente figura experimental ilustra la dinámica de realimentación en lazo cerrado, la modulación bidireccional y el retardo causal de lote ($\Delta k = p = 5$ ciclos) en la matriz `wang2` a lo largo de sus 24 ciclos de convergencia:
+
+![Causal Feedback Dynamics in DMDc-LQR wang2](results/figures/Performance_causal_dynamics_wang2.png)
+
+##### Mecanismo de Realimentación y Retardo Causal ($\Delta k = p$):
+1. **Lote de Muestreo 1 (Batch 1, $k \in [0, 5]$, con $m_0 = 30$):**
+   * El solucionador GMRES ejecuta los primeros $p = 5$ ciclos empleando el parámetro inicial $m_0 = 30$, registrando una contracción gradual del residuo desde $1.0$ hasta $0.3468$.
+   * En la frontera $k = 5$, DMDc identifica los operadores reducidos $(\bar{H}_1, \bar{B}_1)$ con un error de reconstrucción relativo $e_1 = 1.06 \times 10^{-11}$.
+   * El regulador LQR resuelve CARE sobre $\mathcal{M}_1$, calculando un incremento a $m_1 = 57$ para quebrar el estancamiento inicial.
+2. **Acción de Control Diferida y Lote 2 (Batch 2, $k \in [5, 10]$, con $m_1 = 57$):**
+   * **Retardo de lote (Batch delay $\Delta k = p = 5$):** La información muestreada en el Batch 1 no modifica retroactivamente dicho intervalo; su acción de control $m_1 = 57$ gobierna el batch posterior $k \in [5, 10]$ (reflejada en el escalón ascendente en $k=5$ e indicada por la flecha roja inter-panel).
+   * Con la dimensión incrementada a $m_1 = 57$, el residuo se desploma casi cuatro órdenes de magnitud, pasando de $0.3468$ a $8.29 \times 10^{-5}$ en $k = 10$.
+3. **Desescalada Económica en Lote 3 (Batch 3, $k \in [10, 15]$, con $m_2 = 12$):**
+   * En $k = 10$, sobre los datos de rápida contracción, DMDc identifica el modelo $\mathcal{M}_2$ ($e_2 = 2.51 \times 10^{-11}$).
+   * Al reconocer la rápida contracción del sistema, el controlador LQR desescala radicalmente la dimensión a $m_2 = 12$ para ahorrar ortogonalizaciones costosas por ciclo (reduciendo el coste computacional cuadrático de Arnoldi).
+   * Con $m_2 = 12$, el solucionador atraviesa una meseta económica suave ($5.86 \times 10^{-5} \to 3.85 \times 10^{-5}$).
+4. **Reaceleración Final y Cierre de Convergencia (Batches 4 y 5, $k \in [15, 23]$):**
+   * Al detectar la meseta en $k = 15$, DMDc identifica $\mathcal{M}_3$ ($e_3 = 4.12 \times 10^{-13}$) y el regulador LQR reactiva una dimensión mayor $m_3 = 63$, desplomando el residuo hasta $6.60 \times 10^{-8}$ en $k = 20$.
+   * En $k = 20$, a partir de $\mathcal{M}_4$ ($e_4 = 5.68 \times 10^{-11}$), LQR estabiliza $m_4 = 59$, alcanzando convergencia estricta en el ciclo 23 ($\|r_{23}\|/\|r_0\| = 9.995 \times 10^{-10}$) en solo 4 batches de control adaptativo.
 
 ---
 

@@ -2,12 +2,14 @@
 """
 scripts/plot_performance_causal_dynamics.py
 
-Genera una figura explicativa y didáctica para la sección C.2.1 que ilustra de forma explícita:
-1. El mecanismo de muestreo por ventanas (snapshots) en el subgráfico 1.
-2. La identificación de modelos reducidos DMDc y su error de reconstrucción en el subgráfico 2.
-3. La resolución del control óptimo LQR (CARE) en cada frontera k = p, 2p, ... y la actualización de m.
-4. El delay causal inherente de una ventana (Delta k = p ciclos) entre los datos observados
-   con m_{i-1} y la aplicación de la acción de control m_i en la etapa siguiente [k_i, k_{i+1}].
+Generates explanatory causal dynamics figures for sections C.1.1 (young3c), C.2.1 (orsirr1),
+and C.3.1 (wang2) illustrating:
+1. Batch sampling mechanism ($p=5$) in Subplot 1.
+2. DMDc reduced model identification and reconstruction error bars in Subplot 2.
+3. Optimal control (CARE/LQR) decisions at batch boundaries $k=p, 2p, \\dots$.
+4. Inherent causal delay (\\Delta k = p cycles) between observations and control actions.
+5. Closed-loop feedback arrows connecting model identification to control action steps.
+All annotations and terminology in English using "Batch" and "Batch delay".
 """
 
 import argparse
@@ -21,7 +23,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import ConnectionPatch
 
-def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=103, m_min=2):
+def plot_causal_dynamics_matrix(matrix_name, csv_file, output_prefix):
     cycles = []
     m_vals = []
     rel_res = []
@@ -94,14 +96,14 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2 = axes[1]
     ax3 = axes[2]
     
-    # Colores temáticos suaves para las ventanas iniciales
-    c_w1 = '#eaf2f8'  # Azul suave (Ventana 1)
-    c_w2 = '#fef5e7'  # Naranja suave (Ventana 2)
-    c_w3 = '#eafaf1'  # Verde menta suave (Ventana 3)
-    c_w4 = '#f4ecf7'  # Púrpura suave (Ventana 4)
+    # Colores temáticos suaves para los primeros 4 lotes
+    c_w1 = '#eaf2f8'  # Azul suave (Batch 1)
+    c_w2 = '#fef5e7'  # Naranja suave (Batch 2)
+    c_w3 = '#eafaf1'  # Verde menta suave (Batch 3)
+    c_w4 = '#f4ecf7'  # Púrpura suave (Batch 4)
     
     # -------------------------------------------------------------
-    # (1) Curva de Residuos con Sombreado de Ventanas de Muestreo
+    # (1) Curva de Residuos con Sombreado de Lotes de Muestreo
     # -------------------------------------------------------------
     ax1.axvspan(0, 5, facecolor=c_w1, alpha=0.85, zorder=0)
     ax1.axvspan(5, 10, facecolor=c_w2, alpha=0.85, zorder=0)
@@ -114,19 +116,38 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
                  
     ax1.set_ylabel(r'$\|r_k\|/\|r_0\|$', fontsize=11)
     ax1.set_ylim([1e-10, 1.8])
-    ax1.set_title(f'Causal Feedback Dynamics and Batch Sampling Delay in DMDc-LQR ({title_label})',
+    ax1.set_title(f'Causal Feedback Dynamics and Batch Sampling Delay in DMDc-LQR ({matrix_name})',
                   fontsize=11.5, fontweight='bold', pad=10)
     
-    # Batch annotations in Subplot 1
-    ax1.text(2.5, 0.08, 'Batch 1\n($p=5$, with $m_0$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#7094b7', alpha=0.92))
-    ax1.text(7.5, 0.008, 'Batch 2\n($p=5$, with $m_1$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#d9a779', alpha=0.92))
-    ax1.text(12.5, 2e-5, 'Batch 3\n(with $m_2$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#62aa7e', alpha=0.92))
-    ax1.text(17.5, 4e-8, 'Batch 4\n(with $m_3$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#9973b5', alpha=0.92))
-    
+    # Anotaciones de Batch en Panel 1 según matriz
+    if matrix_name == 'orsirr1':
+        ax1.text(2.5, 0.08, 'Batch 1\n($p=5$, with $m_0$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#7094b7', alpha=0.92))
+        ax1.text(7.5, 0.008, 'Batch 2\n($p=5$, with $m_1$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#d9a779', alpha=0.92))
+        ax1.text(12.5, 2e-5, 'Batch 3\n(with $m_2$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#62aa7e', alpha=0.92))
+        ax1.text(17.5, 4e-8, 'Batch 4\n(with $m_3$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#9973b5', alpha=0.92))
+    elif matrix_name == 'young3c':
+        ax1.text(2.5, 0.20, 'Batch 1\n($p=5$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#7094b7', alpha=0.92))
+        ax1.text(7.5, 2.0e-4, 'Batch 2\n($p=5$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#d9a779', alpha=0.92))
+        ax1.text(12.5, 0.015, 'Batch 3\n(with $m_2$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#62aa7e', alpha=0.92))
+        ax1.text(17.5, 2.0e-5, 'Batch 4\n(with $m_3$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#9973b5', alpha=0.92))
+    elif matrix_name == 'wang2':
+        ax1.text(2.5, 0.04, 'Batch 1\n($p=5$, with $m_0$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#7094b7', alpha=0.92))
+        ax1.text(7.5, 0.003, 'Batch 2\n($p=5$, with $m_1$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#d9a779', alpha=0.92))
+        ax1.text(12.5, 0.002, 'Batch 3\n(with $m_2$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#62aa7e', alpha=0.92))
+        ax1.text(17.5, 1.2e-8, 'Batch 4\n(with $m_3$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='#9973b5', alpha=0.92))
+
     # -------------------------------------------------------------
     # (2) Barras de Error DMDc con Identificación de Modelos M_i
     # -------------------------------------------------------------
@@ -163,7 +184,7 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2.set_ylim([y_min, y_max])
     ax2.set_ylabel(r'$e = \|\hat{S} - S\|_F / \|S\|_F$', fontsize=10)
     
-    # Model identification labels
+    # Model identification labels (primeros 4 modelos)
     ax2.text(2.5, stages[0]['error'] * 0.35, r'$\mathcal{M}_1$', fontsize=9, fontweight='bold',
              ha='center', va='center', color='#222222', zorder=4)
     ax2.text(7.5, stages[1]['error'] * 0.35, r'$\mathcal{M}_2$', fontsize=9, fontweight='bold',
@@ -171,25 +192,57 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2.text(12.5, stages[2]['error'] * 0.35, r'$\mathcal{M}_3$', fontsize=9, fontweight='bold',
              ha='center', va='center', color='#222222', zorder=4)
     ax2.text(17.5, stages[3]['error'] * 0.35, r'$\mathcal{M}_4$', fontsize=9, fontweight='bold',
-             ha='center', va='center', color='#ffffff', zorder=4)
+             ha='center', va='center', color='#ffffff' if norm(stages[3]['error']) > 0.6 else '#222222', zorder=4)
              
-    # LQR decision nodes at k = 5 and 10
+    # LQR decision nodes and annotations according to matrix
     ax2.plot(5, stages[0]['error'], marker='o', markersize=6.5, color='#b22222', zorder=5)
     ax2.plot(10, stages[1]['error'], marker='o', markersize=6.5, color='#b22222', zorder=5)
     
-    ax2.annotate('LQR 1 at $k=5$\n' + r'$\mathcal{M}_1 \to m_1=42$', xy=(5, stages[0]['error']),
-                 xytext=(2.2, 4e-11),
-                 arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
-                 fontsize=8, color='#b22222', fontweight='bold',
-                 bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
-                 zorder=6)
-                 
-    ax2.annotate('LQR 2 at $k=10$\n' + r'$\mathcal{M}_2 \to m_2=90$', xy=(10, stages[1]['error']),
-                 xytext=(7.2, 1.3e-10),
-                 arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
-                 fontsize=8, color='#b22222', fontweight='bold',
-                 bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
-                 zorder=6)
+    if matrix_name == 'orsirr1':
+        m1_target = 42
+        m2_target = 90
+        ax2.annotate(f'LQR 1 at $k=5$\n' + rf'$\mathcal{{M}}_1 \to m_1={m1_target}$', xy=(5, stages[0]['error']),
+                     xytext=(2.2, 4e-11),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=8, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
+        ax2.annotate(f'LQR 2 at $k=10$\n' + rf'$\mathcal{{M}}_2 \to m_2={m2_target}$', xy=(10, stages[1]['error']),
+                     xytext=(7.2, 1.3e-10),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=8, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
+    elif matrix_name == 'young3c':
+        m1_target = 76
+        m2_target = 51
+        ax2.annotate(f'LQR 1 at $k=5$\n' + rf'$\mathcal{{M}}_1 \to m_1={m1_target}$', xy=(5, stages[0]['error']),
+                     xytext=(1.8, 5e-11),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=7.5, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
+        ax2.annotate(f'LQR 2 at $k=10$\n' + rf'$\mathcal{{M}}_2 \to m_2={m2_target}$', xy=(10, stages[1]['error']),
+                     xytext=(13.0, 1.4e-10),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=7.5, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
+    elif matrix_name == 'wang2':
+        m1_target = 57
+        m2_target = 12
+        ax2.annotate(f'LQR 1 at $k=5$\n' + rf'$\mathcal{{M}}_1 \to m_1={m1_target}$', xy=(5, stages[0]['error']),
+                     xytext=(2.3, 4e-11),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=8, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
+        ax2.annotate(f'LQR 2 at $k=10$\n' + rf'$\mathcal{{M}}_2 \to m_2={m2_target}$', xy=(10, stages[1]['error']),
+                     xytext=(7.5, 1.2e-10),
+                     arrowprops=dict(arrowstyle='->', color='#b22222', lw=1.1, connectionstyle="arc3,rad=-0.1"),
+                     fontsize=8, color='#b22222', fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.95),
+                     zorder=6)
 
     # -------------------------------------------------------------
     # (3) Valores dinámicos de m y Representación del Delay
@@ -207,11 +260,20 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
         
     ax3.plot(x_stairs, y_stairs, color='#111111', linewidth=1.5, zorder=3, label=r'$m_k$')
     
-    # Lines for m bounds
+    # Parámetros m_max y m_min según matriz
+    matrix_params = {
+        'orsirr1': {'m_max': 103, 'm_min': 2, 'm_pos_x': 0.85},
+        'young3c': {'m_max': 84,  'm_min': 2, 'm_pos_x': 0.85},
+        'wang2':   {'m_max': 290, 'm_min': 2, 'm_pos_x': 0.85}
+    }
+    m_max = matrix_params[matrix_name]['m_max']
+    m_min = matrix_params[matrix_name]['m_min']
+    m_pos_x = matrix_params[matrix_name]['m_pos_x']
+    
     if m_max is not None:
         ax3.axhline(m_max, color='#666666', linestyle='--', linewidth=1.0, zorder=2)
-        ax3.text(x_end * 0.02, m_max * 1.03, rf'$m_{{\max}} = {m_max}$',
-                 fontsize=8.5, color='#404040', verticalalignment='bottom')
+        ax3.text(x_end * m_pos_x, m_max * 1.03, rf'$m_{{\max}} = {m_max}$',
+                 fontsize=8.5, color='#404040', ha='center', verticalalignment='bottom')
     if m_min is not None and m_min > 0:
         ax3.axhline(m_min, color='#888888', linestyle=':', linewidth=0.8, zorder=2)
         
@@ -220,22 +282,59 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax3.set_xlabel('Number of cycles ($k$)', fontsize=11)
     ax3.set_ylabel(r'$m$', fontsize=11)
     
-    # Control action annotations in Subplot 3
-    ax3.text(2.5, 16, r'$m_0 = 30$' + '\n(initial)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#888888', alpha=0.92))
-    ax3.text(7.5, 25, r'$m_1 = 42$' + '\n' + r'(from $\mathcal{M}_1$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
-    ax3.text(12.5, 55, r'$m_2 = 90$' + '\n' + r'(from $\mathcal{M}_2$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
-    ax3.text(17.5, 78, r'$m_3 = 103$' + '\n' + r'($m_{\max}$)', fontsize=8, ha='center', va='center',
-             bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#333333', alpha=0.92))
+    # Control action annotations in Subplot 3 & Delay arrows (sin cruzar borde izquierdo)
+    if matrix_name == 'orsirr1':
+        ax3.text(2.5, 16, r'$m_0 = 30$' + '\n(initial)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#888888', alpha=0.92))
+        ax3.text(7.5, 25, r'$m_1 = 42$' + '\n' + r'(from $\mathcal{M}_1$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(12.5, 55, r'$m_2 = 90$' + '\n' + r'(from $\mathcal{M}_2$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(17.5, 78, r'$m_3 = 103$' + '\n' + r'($m_{\max}$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#333333', alpha=0.92))
 
-    # Batch Delay Indicator in Subplot 3
-    ax3.annotate('', xy=(5, 55), xytext=(0, 55),
-                 arrowprops=dict(arrowstyle='<->', color='#1d568c', lw=1.3))
-    ax3.text(2.5, 58, 'Batch delay: ' + r'$\Delta k = p = 5$', fontsize=7.5,
-             ha='center', va='bottom', color='#1d568c', fontweight='bold',
-             bbox=dict(boxstyle='round,pad=0.15', facecolor='#edf4fc', edgecolor='#1d568c', alpha=0.92))
+        # Batch Delay Indicator
+        ax3.annotate('', xy=(4.8, 55), xytext=(0.2, 55),
+                     arrowprops=dict(arrowstyle='<->', color='#1d568c', lw=1.3))
+        ax3.text(2.5, 58, 'Batch delay\n' + r'$\Delta k = p = 5$', fontsize=7.2,
+                 ha='center', va='bottom', color='#1d568c', fontweight='bold',
+                 bbox=dict(boxstyle='round,pad=0.15', facecolor='#edf4fc', edgecolor='#1d568c', alpha=0.92))
+
+    elif matrix_name == 'young3c':
+        ax3.text(2.5, 14, r'$m_0 = 30$' + '\n(initial)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.15', facecolor='white', edgecolor='#888888', alpha=0.92))
+        ax3.text(7.5, 62, r'$m_1 = 76$' + '\n' + r'(from $\mathcal{M}_1$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.15', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(12.5, 38, r'$m_2 = 51$' + '\n' + r'(from $\mathcal{M}_2$)', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.15', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(17.5, 22, r'$m_3 = 34$', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.15', facecolor='white', edgecolor='#333333', alpha=0.92))
+
+        # Batch Delay Indicator en la zona superior abierta
+        ax3.annotate('', xy=(4.8, 92), xytext=(0.2, 92),
+                     arrowprops=dict(arrowstyle='<->', color='#1d568c', lw=1.3))
+        ax3.text(6.0, 92, r'$\leftarrow$ Batch delay: $\Delta k = p = 5$', fontsize=7.8,
+                 ha='left', va='center', color='#1d568c', fontweight='bold',
+                 bbox=dict(boxstyle='round,pad=0.2', facecolor='#edf4fc', edgecolor='#1d568c', alpha=0.95))
+
+    elif matrix_name == 'wang2':
+        ax3.text(2.5, 16, r'$m_0 = 30$' + '\n(initial)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#888888', alpha=0.92))
+        ax3.text(7.5, 38, r'$m_1 = 57$' + '\n' + r'(from $\mathcal{M}_1$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(12.5, 25, r'$m_2 = 12$' + '\n' + r'(from $\mathcal{M}_2$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(17.5, 45, r'$m_3 = 63$' + '\n' + r'(from $\mathcal{M}_3$)', fontsize=8, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.2', facecolor='#fffbfa', edgecolor='#b22222', alpha=0.92))
+        ax3.text(21.5, 42, r'$m_4 = 59$', fontsize=7.5, ha='center', va='center',
+                 bbox=dict(boxstyle='square,pad=0.15', facecolor='white', edgecolor='#333333', alpha=0.92))
+
+        # Batch Delay Indicator en espacio superior amplio
+        ax3.annotate('', xy=(4.8, 120), xytext=(0.2, 120),
+                     arrowprops=dict(arrowstyle='<->', color='#1d568c', lw=1.3))
+        ax3.text(2.5, 126, 'Batch delay\n' + r'$\Delta k = p = 5$', fontsize=7.5,
+                 ha='center', va='bottom', color='#1d568c', fontweight='bold',
+                 bbox=dict(boxstyle='round,pad=0.15', facecolor='#edf4fc', edgecolor='#1d568c', alpha=0.92))
 
     # Líneas verticales guía cruzando los 3 paneles en las fronteras de decisión k = 5, 10, 15, 20
     for split_k in [5, 10, 15, 20]:
@@ -251,7 +350,7 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     ax2.tick_params(labelsize=10, direction='in', top=True, right=True, labelbottom=False)
     ax3.tick_params(labelsize=10, direction='in', top=True, right=True, labelbottom=True)
 
-    # Ajuste de geometría fija
+    # Ajuste de geometría fija garantizando perfecta alineación horizontal
     fig.subplots_adjust(left=0.13, right=0.80, top=0.94, bottom=0.07, hspace=0.18)
     fig.align_ylabels(axes)
     
@@ -264,19 +363,17 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     cbar.ax.tick_params(labelsize=8.5)
     cbar.set_label(r'$e$', fontsize=10, rotation=0, labelpad=10)
 
-    # Conectores causales entre subgráficos (Flechas de realimentación en lazo cerrado)
-    # Flecha 1: Del fin del modelo 1 (ax2, k=5) al escalón de m_1 (ax3, k=5)
+    # Conectores causales rectos entre subgráficos (Flechas de realimentación directas en x=5 y x=10)
     con1 = ConnectionPatch(xyA=(5, stages[0]['error']), coordsA='data', axesA=ax2,
-                           xyB=(5, 42), coordsB='data', axesB=ax3,
+                           xyB=(5, m1_target), coordsB='data', axesB=ax3,
                            arrowstyle="-|>", color='#b22222', lw=1.6, mutation_scale=13,
-                           connectionstyle="arc3,rad=-0.12", zorder=10)
+                           connectionstyle="arc3,rad=0", zorder=10)
     fig.add_artist(con1)
     
-    # Flecha 2: Del fin del modelo 2 (ax2, k=10) al escalón de m_2 (ax3, k=10)
     con2 = ConnectionPatch(xyA=(10, stages[1]['error']), coordsA='data', axesA=ax2,
-                           xyB=(10, 90), coordsB='data', axesB=ax3,
+                           xyB=(10, m2_target), coordsB='data', axesB=ax3,
                            arrowstyle="-|>", color='#b22222', lw=1.6, mutation_scale=13,
-                           connectionstyle="arc3,rad=-0.12", zorder=10)
+                           connectionstyle="arc3,rad=0", zorder=10)
     fig.add_artist(con2)
 
     # Guardar figuras
@@ -288,23 +385,18 @@ def plot_causal_dynamics(csv_file, output_prefix, title_label="orsirr1", m_max=1
     plt.savefig(eps_path, format='eps', bbox_inches='tight')
     plt.close()
     
-    print(f"[OK] Gráfico causal generado exitosamente:")
+    print(f"[OK] Gráfico causal ({matrix_name}) generado exitosamente:")
     print(f"     PNG: {png_path}")
     print(f"     EPS: {eps_path}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Graficar dinámica causal y delay en DMDc-LQR")
-    parser.add_argument('--cycle_file', type=str, default="results/tables/cycles_orsirr1_dlk.csv")
-    parser.add_argument('--output_prefix', type=str, default="results/figures/Performance_causal_dynamics_orsirr1")
-    parser.add_argument('--title', type=str, default="orsirr1")
-    parser.add_argument('--m_max', type=int, default=103)
-    parser.add_argument('--m_min', type=int, default=2)
+    parser.add_argument('--matrix', type=str, default='all', choices=['all', 'orsirr1', 'young3c', 'wang2'])
     args = parser.parse_args()
     
-    cycle_file = args.cycle_file
-    if not os.path.exists(cycle_file):
-        cand = os.path.join("results/tables", os.path.basename(cycle_file))
-        if os.path.exists(cand):
-            cycle_file = cand
-            
-    plot_causal_dynamics(cycle_file, args.output_prefix, args.title, args.m_max, args.m_min)
+    matrices = ['young3c', 'orsirr1', 'wang2'] if args.matrix == 'all' else [args.matrix]
+    
+    for mat in matrices:
+        cycle_file = f"results/tables/cycles_{mat}_dlk.csv"
+        out_prefix = f"results/figures/Performance_causal_dynamics_{mat}"
+        plot_causal_dynamics_matrix(mat, cycle_file, out_prefix)
