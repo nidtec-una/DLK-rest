@@ -40,7 +40,17 @@ En este escenario estricto (idéntico al artículo original), GMRES estándar su
 
 ---
 
-## 3. Visualización del Rendimiento y Dinámica de $m$ (Formato SIAM)
+## 3. Comparativa de Métodos para Publicación (Estilo SIAM)
+
+La siguiente figura reproduce la comparación exacta de los métodos iterativos de Krylov en escala de grises para publicación científica (comparando GMRES(110), LGMRES(107,3), DLK-LQR-GMRES y DLK-LQR-LGMRES):
+
+![Comparison of Methods sherman5](Comparisonofmethodssherman5.png)
+
+*(Archivos: `results/Comparisonofmethodssherman5.png` y `results/Comparisonofmethodssherman5.eps`)*
+
+---
+
+## 4. Visualización del Rendimiento y Dinámica de $m$ (Formato SIAM)
 
 ### A. Rendimiento de DLK-LQR-GMRES ($m$)
 ![Performance DLK-GMRES sherman5](PerformanceofDMDcLQRGMRESmsherman5_with_m.png)
@@ -50,7 +60,7 @@ En este escenario estricto (idéntico al artículo original), GMRES estándar su
 
 ---
 
-## 4. Benchmark con Precondicionador ILU(0)
+## 5. Benchmark con Precondicionador ILU(0)
 
 | Configuración del Solver (KSP) | Algoritmo / Control | Iteraciones Totales | Residuo Final $\|b - Ax\|_2$ | Tiempo de Ejecución (s) |
 | :--- | :--- | :---: | :---: | :---: |
@@ -62,11 +72,15 @@ En este escenario estricto (idéntico al artículo original), GMRES estándar su
 
 ---
 
-## 5. Archivos Generados en `results/`
+## 6. Archivos Generados en `results/`
 
+* `results/Comparisonofmethodssherman5.png` (Comparación de métodos 300 DPI)
+* `results/Comparisonofmethodssherman5.eps` (Comparación de métodos vectorial PostScript)
 * `results/PerformanceofDMDcLQRGMRESmsherman5_with_m.png` (300 DPI)
 * `results/PerformanceofDMDcLQRGMRESmsherman5_with_m.eps` (Vectorial PostScript)
 * `results/PerformanceofDMDcLQRLGMRESmellsherman5_with_m.png` (300 DPI)
 * `results/PerformanceofDMDcLQRLGMRESmellsherman5_with_m.eps` (Vectorial PostScript)
-* `results/cycles_sherman5_dlk.csv` (Historial ciclo a ciclo con error DMDc)
-* `results/cycles_sherman5_dlklgmres.csv` (Historial ciclo a ciclo LGMRES)
+* `results/cycles_sherman5_dlk.csv` (Historial ciclo a ciclo DLK-GMRES con error DMDc)
+* `results/cycles_sherman5_dlklgmres.csv` (Historial ciclo a ciclo DLK-LGMRES)
+* `results/cycles_sherman5_gmres110.csv` (Historial ciclo a ciclo GMRES(110))
+* `results/cycles_sherman5_lgmres107.csv` (Historial ciclo a ciclo LGMRES(107,3))

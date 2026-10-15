@@ -77,7 +77,17 @@ La matriz **`sherman5`** ($N = 3312 \times 3312$, $\text{nnz} = 20\,793$, simula
 
 ---
 
-## 5. Curvas de Rendimiento con Dinámica de $m$ (Estilo SIAM)
+## 5. Comparación de Métodos de Krylov para Publicación (Estilo SIAM)
+
+El script `plot_comparison_of_methods.py` reproduce la figura estándar de publicación científica que contrasta las trayectorias de convergencia en escala de grises con marcadores diferenciados:
+
+![Comparison of Methods sherman5](results/Comparisonofmethodssherman5.png)
+
+*(Archivos vectoriales y de alta resolución: `results/Comparisonofmethodssherman5.png` y `results/Comparisonofmethodssherman5.eps`)*
+
+---
+
+## 6. Curvas de Rendimiento con Dinámica de $m$ (Estilo SIAM)
 
 El script `plot_performance_with_m.py` genera las figuras en formato SIAM de 3 paneles (curva de residuo, barras de error de aproximación DMDc con gradiente y trayectoria adaptativa de $m$):
 
@@ -89,7 +99,7 @@ El script `plot_performance_with_m.py` genera las figuras en formato SIAM de 3 p
 
 ---
 
-## 6. Ejemplos de Ejecución
+## 7. Ejemplos de Ejecución
 
 ### A. Resolver matriz de SuiteSparse con DLK-LQR-GMRES:
 ```bash
@@ -101,19 +111,24 @@ El script `plot_performance_with_m.py` genera las figuras en formato SIAM de 3 p
 ./test_dlk -matrix data/sherman5.bin -ksp_type dlk_lgmres -ksp_dlk_m0 30 -ksp_dlk_aug 3 -ksp_dlk_controller lqr -pc_type none -tol 1e-9 -ksp_max_it 50000 -cycle_file results/cycles_sherman5_dlklgmres.csv
 ```
 
-### C. Generar gráficos SIAM en PNG y EPS:
+### C. Generar gráfica de comparación de métodos (PNG y EPS):
+```bash
+python3 plot_comparison_of_methods.py --output_prefix results/Comparisonofmethodssherman5 --title sherman5 --tol 1e-9
+```
+
+### D. Generar gráficas de dinámica adaptativa SIAM en 3 paneles (PNG y EPS):
 ```bash
 python3 plot_performance_with_m.py --cycle_file results/cycles_sherman5_dlklgmres.csv --output_prefix results/PerformanceofDMDcLQRLGMRESmellsherman5_with_m --title "DMDc-LQR-LGMRES - sherman5" --m_max 331
 ```
 
-### D. Ejecución en Paralelo con MPI (4 procesos):
+### E. Ejecución en Paralelo con MPI (4 procesos):
 ```bash
 mpirun -np 4 ./test_dlk -m 80 -n 80 -ksp_type dlk_lgmres -ksp_dlk_controller lqr -pc_type bjacobi
 ```
 
 ---
 
-## 7. Estructura del Repositorio
+## 8. Estructura del Repositorio
 
 * `include/petsckspdlk.h`: Prototipos de la API pública de PETSc para `KSPDLK` y `KSPDLKLGMRES`.
 * `include/kspdlkimpl.h`: Estructura interna de datos (`KSP_DLK`), base de Arnoldi, vectores de enriquecimiento y buffer de snapshots.
@@ -121,6 +136,7 @@ mpirun -np 4 ./test_dlk -m 80 -n 80 -ksp_type dlk_lgmres -ksp_dlk_controller lqr
 * `src/dmdc_lqr.c`: Identificación DMDc basada en Gram SVD, resolución CARE de Laub (1979) y cálculo del error de reconstrucción de Frobenius.
 * `src/kspdlk.c`: Implementación del ciclo de vida KSP de PETSc (`Create`, `SetUp`, `Solve`, `Destroy`, `SetFromOptions`, `View`).
 * `tests/test_dlk.c`: Driver CLI con soporte de carga de matrices binarias y exportación de historiales.
+* `plot_comparison_of_methods.py`: Generador de figuras de comparación de métodos estilo SIAM (PNG y EPS vectorial).
 * `plot_performance_with_m.py`: Generador de figuras de rendimiento en 3 paneles (PNG y EPS vectorial).
 * `data/sherman5.bin`: Matriz real SuiteSparse convertida a binario de PETSc.
 * `results/`: Tablas de resultados, archivos CSV de ciclos y figuras vectoriales/ráster.
