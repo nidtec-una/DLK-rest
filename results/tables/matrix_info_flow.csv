@@ -1,10 +1,10 @@
-Problem,Matrix,Tag,Kf,Regime,n,nnz,norm_b
-1,flow_benchmark_2d_case_1_Kf1e-08,Kf1e-08,1.0e-08,Barrera casi impermeable,11089,76208,2.0000e+01
-2,flow_benchmark_2d_case_1_Kf1e-06,Kf1e-06,1.0e-06,Fractura de baja conductividad,11089,76208,2.0000e+01
-3,flow_benchmark_2d_case_1_Kf1e-04,Kf1e-04,1.0e-04,Fractura de resistencia moderada,11089,76208,2.0000e+01
-4,flow_benchmark_2d_case_1_Kf1e-02,Kf1e-02,1.0e-02,Transición matriz-fractura,11089,76208,2.0000e+01
-5,flow_benchmark_2d_case_1_Kf1e+00,Kf1e+00,1.0e+00,Permeabilidad homogénea,11089,76208,2.0000e+01
-6,flow_benchmark_2d_case_1_Kf1e+02,Kf1e+02,1.0e+02,Fractura moderadamente conductora,11089,76208,2.0199e+01
-7,flow_benchmark_2d_case_1_Kf1e+04,Kf1e+04,1.0e+04,Fractura conductora,11089,76208,2.8355e+02
-8,flow_benchmark_2d_case_1_Kf1e+06,Kf1e+06,1.0e+06,Canal altamente conductor,11089,76208,2.8284e+04
-9,flow_benchmark_2d_case_1_Kf1e+08,Kf1e+08,1.0e+08,Canal de flujo hiper-conductor,11089,76208,2.8284e+06
+Problem,Matrix,Tag,Kf,Regime,n,nnz,cond_A,norm_b
+1,flow_benchmark_2d_case_1_Kf1e-08,Kf1e-08,1.0e-08,Barrera casi impermeable,11089,76208,1.8035e+11,2.0000e+01
+2,flow_benchmark_2d_case_1_Kf1e-06,Kf1e-06,1.0e-06,Fractura de baja conductividad,11089,76208,1.8040e+09,2.0000e+01
+3,flow_benchmark_2d_case_1_Kf1e-04,Kf1e-04,1.0e-04,Fractura de resistencia moderada,11089,76208,1.8480e+07,2.0000e+01
+4,flow_benchmark_2d_case_1_Kf1e-02,Kf1e-02,1.0e-02,Transición matriz-fractura,11089,76208,5.8364e+05,2.0000e+01
+5,flow_benchmark_2d_case_1_Kf1e+00,Kf1e+00,1.0e+00,Permeabilidad homogénea,11089,76208,2.0848e+06,2.0000e+01
+6,flow_benchmark_2d_case_1_Kf1e+02,Kf1e+02,1.0e+02,Fractura moderadamente conductora,11089,76208,2.0309e+08,2.0199e+01
+7,flow_benchmark_2d_case_1_Kf1e+04,Kf1e+04,1.0e+04,Fractura conductora,11089,76208,9.1471e+09,2.8355e+02
+8,flow_benchmark_2d_case_1_Kf1e+06,Kf1e+06,1.0e+06,Canal altamente conductor,11089,76208,3.0955e+11,2.8284e+04
+9,flow_benchmark_2d_case_1_Kf1e+08,Kf1e+08,1.0e+08,Canal de flujo hiper-conductor,11089,76208,2.9996e+13,2.8284e+06

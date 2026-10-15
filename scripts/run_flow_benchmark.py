@@ -37,6 +37,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e-08.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "1.8035e+11",
         "norm_b": 2.0e+01
     },
     {
@@ -48,6 +49,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e-06.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "1.8040e+09",
         "norm_b": 2.0e+01
     },
     {
@@ -59,6 +61,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e-04.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "1.8480e+07",
         "norm_b": 2.0e+01
     },
     {
@@ -70,6 +73,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e-02.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "5.8364e+05",
         "norm_b": 2.0e+01
     },
     {
@@ -81,6 +85,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e+00.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "2.0848e+06",
         "norm_b": 2.0e+01
     },
     {
@@ -92,6 +97,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e+02.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "2.0309e+08",
         "norm_b": 2.0199e+01
     },
     {
@@ -103,6 +109,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e+04.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "9.1471e+09",
         "norm_b": 2.8355e+02
     },
     {
@@ -114,6 +121,7 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e+06.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "3.0955e+11",
         "norm_b": 2.8284e+04
     },
     {
@@ -125,16 +133,22 @@ FLOW_PROBLEMS = [
         "file": "data/bin/flow_benchmark/flow_benchmark_2d_case_1_Kf1e+08.bin",
         "N": 11089,
         "nnz": 76208,
+        "cond_A": "2.9996e+13",
         "norm_b": 2.8284e+06
     }
 ]
 
-def run_petsc_solver(bin_file, solver_type, cycle_file=None, norm_b=1.0, m0=30, m_max=60, l=2, tol=1e-9, max_cycles=400, max_its=50000, timeout=120):
+def run_petsc_solver(bin_file, solver_type, cycle_file=None, norm_b=1.0, m0=30, m_max=300, l=2, tol=1e-9, max_cycles=1000, max_its=None, timeout=600):
+    if max_its is None:
+        effective_max_its = max(100000, max_cycles * m_max)
+    else:
+        effective_max_its = max_its
+
     cmd = [
         "./test_dlk",
         "-matrix", bin_file,
         "-tol", str(tol),
-        "-ksp_max_it", str(max_its),
+        "-ksp_max_it", str(effective_max_its),
         "-pc_type", "none"
     ]
 
@@ -167,13 +181,15 @@ def run_petsc_solver(bin_file, solver_type, cycle_file=None, norm_b=1.0, m0=30, 
 
     env = os.environ.copy()
     env["OMP_NUM_THREADS"] = "1"
+    actual_timeout = timeout if (timeout is not None and timeout > 0) else None
     t0 = time.time()
     try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout, env=env)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=actual_timeout, env=env)
         output = proc.stdout
         elapsed = time.time() - t0
     except subprocess.TimeoutExpired:
-        return "NC", "NC", f"Timeout (>{timeout}s)"
+        to_str = f"{timeout}s ({timeout/60:.1f}m)" if timeout else "timeout"
+        return "NC", "NC", f"Timeout (>{to_str})"
     except Exception as e:
         return "NC", "NC", str(e)
 
@@ -192,7 +208,7 @@ def run_petsc_solver(bin_file, solver_type, cycle_file=None, norm_b=1.0, m0=30, 
 
     # Criterio estricto de convergencia relativa: ||r_k|| / ||b|| <= tol * 50
     rel_res = residual / norm_b if norm_b > 0 else residual
-    converged = (cycles > 0) and (cycles < max_cycles) and (its < max_its) and (rel_res <= tol * 50)
+    converged = (cycles > 0) and (cycles < max_cycles) and (its < effective_max_its) and (rel_res <= tol * 50)
     if not converged:
         return "NC", "NC", f"No conv (its={its}, rel_res={rel_res:.2e})"
 
@@ -201,7 +217,7 @@ def run_petsc_solver(bin_file, solver_type, cycle_file=None, norm_b=1.0, m0=30, 
 def save_csv_tables(out_matrix, out_cycles, out_time, matrix_rows, cycles_rows, time_rows):
     """Guarda inmediatamente las tablas CSV para asegurar persistencia incremental."""
     with open(out_matrix, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["Problem", "Matrix", "Tag", "Kf", "Regime", "n", "nnz", "norm_b"])
+        writer = csv.DictWriter(f, fieldnames=["Problem", "Matrix", "Tag", "Kf", "Regime", "n", "nnz", "cond_A", "norm_b"])
         writer.writeheader()
         writer.writerows(matrix_rows)
 
@@ -326,8 +342,12 @@ def main():
 
     parser = argparse.ArgumentParser(description="Ejecutar benchmark completo de problemas de flujo fracturado")
     parser.add_argument("--force", action="store_true", help="Forzar re-ejecución ignorando resultados previos")
-    parser.add_argument("--timeout", type=int, default=120, help="Timeout por corrida en segundos (def: 120)")
+    parser.add_argument("--timeout", type=int, default=600, help="Timeout por corrida en segundos (def: 600 = 10 min, 0 o negativo para desactivar)")
+    parser.add_argument("--m_max", type=int, default=300, help="Cota máxima para m en DMDc-LQR (def: 300)")
     args = parser.parse_args()
+
+    timeout_val = None if args.timeout <= 0 else args.timeout
+    timeout_desc = "Sin timeout" if timeout_val is None else f"{timeout_val}s ({timeout_val/60:.1f} min)"
 
     print("\n" + "=" * 115)
     print(" BENCHMARK COMPLETO: MIXED-DIMENSIONAL FLOW BENCHMARK EN MEDIOS FRACTURADOS")
@@ -337,7 +357,8 @@ def main():
     print(" - Hilos BLAS/OpenMP : OMP_NUM_THREADS = 1 (secuencial determinista)")
     print(" - Precondicionador  : Ninguno (-pc_type none, unificado con artículo)")
     print(" - Tolerancia        : tol = 1e-9 (estricta)")
-    print(" - Parámetro DLK     : m0 = 30, m_min = 2, m_max = 60, alpha = 1e-4")
+    print(f" - Timeout por corr. : {timeout_desc}")
+    print(f" - Parámetro DLK     : m0 = 30, m_min = 2, m_max = {args.m_max}, alpha = 1e-4")
     print("=" * 115)
     sys.stdout.flush()
 
@@ -375,11 +396,12 @@ def main():
             "Regime": regime,
             "n": N,
             "nnz": nnz,
+            "cond_A": p.get("cond_A", "N/A"),
             "norm_b": f"{norm_b:.4e}"
         })
 
         print(f"\n[{pid}/9] Problema: {tag} ({name})")
-        print(f"      Física: {regime} | N = {N}, nnz = {nnz}, ||b|| = {norm_b:.2e}")
+        print(f"      Física: {regime} | N = {N}, nnz = {nnz}, cond = {p.get('cond_A', 'N/A')}, ||b|| = {norm_b:.2e}")
         sys.stdout.flush()
 
         if pid in existing_cycles and pid in existing_time:
@@ -402,25 +424,25 @@ def main():
 
         # 1. GMRES(30)
         print("      -> Ejecutando GMRES(30) ... ", end="", flush=True)
-        cg, tg, msg_g = run_petsc_solver(bin_file, "GMRES", cycle_file=cyc_file_gmres, norm_b=norm_b, m0=30, timeout=args.timeout)
+        cg, tg, msg_g = run_petsc_solver(bin_file, "GMRES", cycle_file=cyc_file_gmres, norm_b=norm_b, m0=30, timeout=timeout_val)
         print(f"{cg} ciclos | {tg} s ({msg_g})")
         sys.stdout.flush()
 
         # 2. LGMRES(28, 2)
         print("      -> Ejecutando LGMRES(28, 2) ... ", end="", flush=True)
-        cl, tl, msg_l = run_petsc_solver(bin_file, "LGMRES", cycle_file=cyc_file_lgmres, norm_b=norm_b, m0=30, l=2, timeout=args.timeout)
+        cl, tl, msg_l = run_petsc_solver(bin_file, "LGMRES", cycle_file=cyc_file_lgmres, norm_b=norm_b, m0=30, l=2, timeout=timeout_val)
         print(f"{cl} ciclos | {tl} s ({msg_l})")
         sys.stdout.flush()
 
         # 3. DMDc-LQR-GMRES
-        print("      -> Ejecutando DMDc-LQR-GMRES (m0=30, m_max=60) ... ", end="", flush=True)
-        c_dlk, t_dlk, msg_dlk = run_petsc_solver(bin_file, "GMRES_DMDc_LQR", cycle_file=cyc_file_dlk, norm_b=norm_b, m0=30, m_max=60, timeout=args.timeout)
+        print(f"      -> Ejecutando DMDc-LQR-GMRES (m0=30, m_max={args.m_max}) ... ", end="", flush=True)
+        c_dlk, t_dlk, msg_dlk = run_petsc_solver(bin_file, "GMRES_DMDc_LQR", cycle_file=cyc_file_dlk, norm_b=norm_b, m0=30, m_max=args.m_max, timeout=timeout_val)
         print(f"{c_dlk} ciclos | {t_dlk} s ({msg_dlk})")
         sys.stdout.flush()
 
         # 4. DMDc-LQR-LGMRES
-        print("      -> Ejecutando DMDc-LQR-LGMRES (m0=28, l=2, m_max=60) ... ", end="", flush=True)
-        c_dlkl, t_dlkl, msg_dlkl = run_petsc_solver(bin_file, "LGMRES_DMDc_LQR", cycle_file=cyc_file_dlk_l, norm_b=norm_b, m0=30, l=2, m_max=60, timeout=args.timeout)
+        print(f"      -> Ejecutando DMDc-LQR-LGMRES (m0=28, l=2, m_max={args.m_max}) ... ", end="", flush=True)
+        c_dlkl, t_dlkl, msg_dlkl = run_petsc_solver(bin_file, "LGMRES_DMDc_LQR", cycle_file=cyc_file_dlk_l, norm_b=norm_b, m0=30, l=2, m_max=args.m_max, timeout=timeout_val)
         print(f"{c_dlkl} ciclos | {t_dlkl} s ({msg_dlkl})")
         sys.stdout.flush()
 
@@ -454,7 +476,7 @@ def main():
         # Generar figura de 3 paneles para este caso
         fig_prefix = f"results/figures/PerformanceofDMDcLQRGMRES_flow_{tag}_with_m"
         title_fig = f"Flow Benchmark ({tag})"
-        ok_fig = generate_performance_figure(cyc_file_dlk, fig_prefix, title_fig, m_max=60, m_min=2)
+        ok_fig = generate_performance_figure(cyc_file_dlk, fig_prefix, title_fig, m_max=args.m_max, m_min=2)
         if ok_fig:
             print(f"      [✓] Figura generada: {fig_prefix}.png / .eps")
         sys.stdout.flush()
