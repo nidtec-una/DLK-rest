@@ -96,20 +96,13 @@ def plot_performance(csv_file, output_prefix, title_label="sherman5", m_max=331,
             
         ax2.set_yscale('log')
         ax2.set_ylim([min_err * 0.5, max_err * 2.0])
-        
-        # Colorbar
-        sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-        sm.set_array([])
-        cbar = fig.colorbar(sm, ax=ax2, orientation='vertical', pad=0.02, fraction=0.046)
-        cbar.ax.tick_params(labelsize=8)
-        cbar.set_label(r'$e$', fontsize=10, rotation=0, labelpad=8)
     else:
         ax2.text(0.5, 0.5, 'No DMDc snapshots recorded', ha='center', va='center', transform=ax2.transAxes)
-    
+        
     ax2.set_ylabel(r'$e = \|\hat{S} - S\|_F / \|S\|_F$', fontsize=10)
     ax2.grid(True, which='both', linestyle=':', linewidth=0.6, alpha=0.7)
     ax2.tick_params(labelsize=10, direction='in', top=True, right=True)
-    
+        
     # -------------------------------------------------------------
     # (3) Valores dinámicos de m
     # -------------------------------------------------------------
@@ -134,7 +127,18 @@ def plot_performance(csv_file, output_prefix, title_label="sherman5", m_max=331,
     ax3.grid(True, which='both', linestyle=':', linewidth=0.6, alpha=0.7)
     ax3.tick_params(labelsize=10, direction='in', top=True, right=True)
     
-    plt.tight_layout()
+    # Ajuste del layout garantizando que ax1, ax2 y ax3 tengan exactamente el mismo ancho y alineación en x
+    plt.tight_layout(rect=[0.0, 0.0, 0.88, 1.0])
+    
+    # Añadir gradiente de colorbar a la derecha de ax2 en un eje dedicado
+    if len(snap_indices) > 0:
+        pos2 = ax2.get_position()
+        cax = fig.add_axes([pos2.x1 + 0.035, pos2.y0, 0.025, pos2.height])
+        sm = cm.ScalarMappable(norm=norm, cmap=cmap)
+        sm.set_array([])
+        cbar = fig.colorbar(sm, cax=cax, orientation='vertical')
+        cbar.ax.tick_params(labelsize=8.5)
+        cbar.set_label(r'$e$', fontsize=10, rotation=0, labelpad=10)
     
     # Asegurar directorios de salida
     png_path = f"{output_prefix}.png"
