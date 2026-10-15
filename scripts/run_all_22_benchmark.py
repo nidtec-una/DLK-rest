@@ -61,9 +61,9 @@ def resolve_bin_file(mat_name):
             return c
     return candidates[0]
 
-def run_petsc_solver(bin_file, solver_type, m0=30, m_max=331, l=2, tol=1e-9, max_cycles=400, timeout=45):
+def run_petsc_solver(bin_file, solver_type, m0=30, m_max=331, l=2, tol=1e-9, max_cycles=400, timeout=180):
     # En PETSc sin precondicionador (unpreconditioned, como en el benchmark de MATLAB)
-    max_its = max_cycles * m_max
+    max_its = max(50000, max_cycles * m_max)
 
     cmd = ["./test_dlk", "-matrix", bin_file, "-tol", str(tol), "-ksp_max_it", str(max_its), "-pc_type", "none"]
 
@@ -91,9 +91,11 @@ def run_petsc_solver(bin_file, solver_type, m0=30, m_max=331, l=2, tol=1e-9, max
             "-ksp_dlk_alpha", "0.0001"
         ]
 
+    env = os.environ.copy()
+    env["OMP_NUM_THREADS"] = "1"
     t0 = time.time()
     try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout, env=env)
         output = proc.stdout
         elapsed = time.time() - t0
     except subprocess.TimeoutExpired:
@@ -163,13 +165,13 @@ def main():
             m_max = 331
 
         # 1. GMRES(30)
-        cg, tg = run_petsc_solver(bin_path, "GMRES", m0=m0_default, m_max=m_max, tol=tol, max_cycles=max_cycles, timeout=40)
+        cg, tg = run_petsc_solver(bin_path, "GMRES", m0=m0_default, m_max=m_max, tol=tol, max_cycles=max_cycles, timeout=180)
         # 2. LGMRES(28, 2)
-        cl, tl = run_petsc_solver(bin_path, "LGMRES", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=40)
+        cl, tl = run_petsc_solver(bin_path, "LGMRES", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=180)
         # 3. DLK-GMRES(30)
-        c_dlk, t_dlk = run_petsc_solver(bin_path, "GMRES_DMDc_LQR", m0=m0_default, m_max=m_max, tol=tol, max_cycles=max_cycles, timeout=40)
+        c_dlk, t_dlk = run_petsc_solver(bin_path, "GMRES_DMDc_LQR", m0=m0_default, m_max=m_max, tol=tol, max_cycles=max_cycles, timeout=180)
         # 4. DLK-LGMRES(28, 2)
-        c_dlkl, t_dlkl = run_petsc_solver(bin_path, "LGMRES_DMDc_LQR", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=40)
+        c_dlkl, t_dlkl = run_petsc_solver(bin_path, "LGMRES_DMDc_LQR", m0=m0_default, m_max=m_max, l=l_default, tol=tol, max_cycles=max_cycles, timeout=180)
 
         cycles_rows.append({
             "Problem": pid,

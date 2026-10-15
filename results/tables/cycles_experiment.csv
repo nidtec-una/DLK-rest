@@ -4,9 +4,9 @@ Problem,Matrix,Cycles_GMRES,Cycles_LGMRES,Cycles_GMRES_DMDc_LQR,Cycles_LGMRES_DM
 3,cavity10,NC,127,28,12
 4,cdde1,33,28,88,8
 5,circuit2,25,20,7,23
-6,ex40,NC,NC,NC,NC
+6,ex40,NC,NC,83,58
 7,fpgatrans01,104,35,14,28
-8,memplus,NC,49,NC,NC
+8,memplus,93,49,8,7
 9,orsirr1,158,78,52,19
 10,orsreg1,23,19,18,43
 11,pde2961,13,22,32,22
@@ -18,6 +18,6 @@ Problem,Matrix,Cycles_GMRES,Cycles_LGMRES,Cycles_GMRES_DMDc_LQR,Cycles_LGMRES_DM
 17,sherman5,NC,NC,52,20
 18,steam2,14,23,13,17
 19,wang2,93,29,24,15
-20,wang4,NC,NC,NC,NC
+20,wang4,94,NC,36,21
 21,watt1,137,26,25,13
 22,young3c,342,104,92,48
