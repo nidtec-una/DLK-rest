@@ -29,7 +29,7 @@ En lugar de fijar un parámetro estático $m$ o recurrir a heurísticas ad-hoc, 
    $$\bar{H}^T P + P \bar{H} - P \bar{B} R^{-1} \bar{B}^T P + Q = 0, \quad K = R^{-1} \bar{B}^T P$$
 4. Selecciona de forma óptima y adaptativa el parámetro de reinicio $m_{k+1}$ acotado en $[m_{\min}, m_{\max}]$, rompiendo mesetas de convergencia con el menor coste computacional.
 
-El solucionador principal **`DLK-GMRES`** integra control óptimo adaptativo de reinicio para acelerar la convergencia y evitar el estancamiento en sistemas lineales de gran escala.
+El paquete implementa tanto la variante estándar **`DLK-GMRES`** como la variante enriquecida con aproximaciones de error acumuladas **`DLK-LGMRES`**.
 
 ---
 
@@ -63,22 +63,24 @@ El `Makefile` detecta automáticamente la instalación de PETSc mediante `pkg-co
 
 ## 4. Guía de Uso del Solver
 
-El solver se integra de forma nativa en el sistema de opciones de PETSc mediante el prefijo `-ksp_dlk_*`:
+Los solvers se integran de forma nativa en el sistema de opciones de PETSc mediante el prefijo `-ksp_dlk_*`:
 
-### Solver Registrado (`-ksp_type`)
+### Solvers Registrados (`-ksp_type`)
 * **`dlk`**: GMRES con adaptación dinámica de $m$ vía DMDc-LQR o PD.
+* **`dlk_lgmres`**: LGMRES adaptativo que combina subespacio Krylov de tamaño variable con $\ell$ vectores de enriquecimiento.
 
 ### Opciones de la Línea de Comandos
 
 | Opción CLI | Tipo | Defecto | Descripción |
 | :--- | :---: | :---: | :--- |
 | `-matrix <path.bin>` | String | Requerido | Archivo binario PETSc con matriz $A$ y vector $b$. |
-| `-ksp_type <tipo>` | String | `dlk` | Solver: `dlk`, `gmres`, `lgmres`, `bcgs`. |
+| `-ksp_type <tipo>` | String | `dlk` | Solver: `dlk`, `dlk_lgmres`, `gmres`, `lgmres`, `bcgs`. |
 | `-ksp_dlk_controller` | Enum | `lqr` | Algoritmo de control: `lqr`, `pd`, `none`. |
 | `-ksp_dlk_m0` | Entero | `30` | Dimensión de reinicio inicial ($m_0$). |
 | `-ksp_dlk_m_min` | Entero | `2` | Cota mínima permitida para $m$. |
 | `-ksp_dlk_m_max` | Entero | `60` | Cota máxima permitida para $m$. |
 | `-ksp_dlk_alpha` | Real | `1e-4` | Penalización $\alpha$ en CARE ($R = \alpha I$). |
+| `-ksp_dlk_aug` | Entero | `2` | Número de vectores de enriquecimiento $\ell$ (en `dlk_lgmres`). |
 | `-pc_type <tipo>` | String | `ilu` | Precondicionador: `ilu`, `none`, `jacobi`, `bjacobi`. |
 | `-tol <val>` | Real | `1e-8` | Tolerancia de convergencia relativa $\|r_k\|/\|r_0\|$. |
 | `-cycle_file <path.csv>` | String | Opcional | Exporta historial de ciclos ($m$, residuo relativo, error DMDc). |
@@ -247,6 +249,7 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 
 ### C. Formulación de Riccati (CARE) y Acotado de $m$
 * **Resolución de CARE:** En MATLAB se invoca `lqr(H, B, Q, R)`. En PETSc (`src/dmdc_lqr.c`), se resolvió de forma nativa la Ecuación Algebraica de Riccati en Tiempo Continuo (CARE) mediante el formalismo Hamiltoniano de Laub (1979) utilizando descomposición espectral de LAPACK (`LAPACKgeev_`) y proyección sobre el subespacio controlable (`LAPACKgesvd_`) si el par $(\bar{H}, \bar{B})$ es no controlable con penalización $R_c = \alpha = 10^{-4}$ consistente con el sistema completo.
+* **Descuento de Enriquecimiento en LGMRES:** De manera exacta a la formulación teórica del artículo (`LGMRES_DMDc_LQR_fixp.m`), cuando se utiliza `dlk_lgmres` con $\ell$ vectores de enriquecimiento, el tamaño del subespacio Krylov estándar se ajusta a $m_k - \ell$, manteniendo constante la dimensión proyectada total y preservando la correspondencia matemática con MATLAB.
 
 ### D. Criterio de Residuo y Ausencia de Precondicionador
 * **Alineación de Tolerancia:** En las comparaciones del artículo, los solucionadores operan sin precondicionador (`Unpreconditioned GMRES`). En PETSc, fijar explícitamente `-pc_type none` garantiza que el residuo monitoreado sea la norma Euclidiana directa $\|b - A x_k\|_2 / \|b\|_2$, haciéndolo estrictamente comparable con la tolerancia relativa $\epsilon = 10^{-9}$ empleada en MATLAB.
