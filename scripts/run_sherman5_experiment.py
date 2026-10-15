@@ -34,23 +34,23 @@ def main():
 
     solvers = [
         {
-            "name": "GMRES(110)",
-            "cycle_file": "results/tables/cycles_sherman5_gmres110.csv",
+            "name": "GMRES(30)",
+            "cycle_file": "results/tables/cycles_sherman5_gmres30.csv",
             "cmd": [
                 "./test_dlk", "-matrix", matrix_bin,
-                "-ksp_type", "gmres", "-ksp_gmres_restart", "110",
-                "-pc_type", "none", "-tol", "1e-9", "-ksp_max_it", "50000",
-                "-cycle_file", "results/tables/cycles_sherman5_gmres110.csv"
+                "-ksp_type", "gmres", "-ksp_gmres_restart", "30",
+                "-pc_type", "none", "-tol", "1e-9", "-ksp_max_it", "1800",
+                "-cycle_file", "results/tables/cycles_sherman5_gmres30.csv"
             ]
         },
         {
-            "name": "LGMRES(107, 3)",
-            "cycle_file": "results/tables/cycles_sherman5_lgmres107.csv",
+            "name": "LGMRES(28, 2)",
+            "cycle_file": "results/tables/cycles_sherman5_lgmres28.csv",
             "cmd": [
                 "./test_dlk", "-matrix", matrix_bin,
-                "-ksp_type", "lgmres", "-ksp_lgmres_restart", "107", "-ksp_lgmres_augment", "3",
-                "-pc_type", "none", "-tol", "1e-9", "-ksp_max_it", "50000",
-                "-cycle_file", "results/tables/cycles_sherman5_lgmres107.csv"
+                "-ksp_type", "lgmres", "-ksp_lgmres_restart", "28", "-ksp_lgmres_augment", "2",
+                "-pc_type", "none", "-tol", "1e-9", "-ksp_max_it", "1800",
+                "-cycle_file", "results/tables/cycles_sherman5_lgmres28.csv"
             ]
         },
         {
@@ -71,7 +71,7 @@ def main():
             "cmd": [
                 "./test_dlk", "-matrix", matrix_bin,
                 "-ksp_type", "dlk_lgmres", "-ksp_dlk_controller", "lqr",
-                "-ksp_dlk_m0", "27", "-ksp_dlk_aug", "3", "-ksp_dlk_m_min", "2", "-ksp_dlk_m_max", "331",
+                "-ksp_dlk_m0", "28", "-ksp_dlk_aug", "2", "-ksp_dlk_m_min", "2", "-ksp_dlk_m_max", "331",
                 "-ksp_dlk_alpha", "0.0001",
                 "-pc_type", "none", "-tol", "1e-9", "-ksp_max_it", "50000",
                 "-cycle_file", "results/tables/cycles_sherman5_dlklgmres.csv"

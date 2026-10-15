@@ -235,6 +235,10 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
 
             if (h_next > 1e-14) {
                 PetscCall(VecScale(V[j + 1], 1.0 / h_next));
+            } else if (j >= m) {
+                /* El vector aumentado z es linealmente dependiente: truncar incremento */
+                actual_s = j;
+                break;
             }
 
             /* Aplicar rotaciones de Givens previas a la columna j de hh */
@@ -326,6 +330,10 @@ static PetscErrorCode KSPSolve_DLK(KSP ksp)
         PetscCall(KSP_PCApply(ksp, w, V[0]));
         PetscCall(VecNorm(V[0], NORM_2, &rnorm));
         ksp->rnorm = rnorm;
+
+        if (ksp->reason) break;
+        PetscCall((*ksp->converged)(ksp, ksp->its, rnorm, &ksp->reason, ksp->cnvP));
+        if (ksp->reason) break;
 
         PetscReal relres = (r0_norm > 1e-14) ? (rnorm / r0_norm) : rnorm;
         PetscReal dmdc_err = 0.0;

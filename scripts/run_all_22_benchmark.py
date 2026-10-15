@@ -117,7 +117,7 @@ def run_petsc_solver(bin_file, solver_type, m0=30, m_max=331, l=2, tol=1e-9, max
     report_time = float(time_m.group(1)) if time_m else elapsed
 
     # Criterio: converged if residual achieved within max_cycles
-    if cycles <= 0 or cycles >= max_cycles or its >= max_its:
+    if cycles <= 0 or cycles >= max_cycles or its >= max_its or residual > 1e-4:
         return "NC", "NC"
 
     return cycles, round(report_time, 5)

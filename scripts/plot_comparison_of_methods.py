@@ -50,8 +50,8 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
 
     series = [
         {
-            'file': find_csv('cycles_sherman5_gmres110.csv'),
-            'name': 'GMRES(110)',
+            'file': find_csv('cycles_sherman5_gmres30.csv'),
+            'name': 'GMRES(30)',
             'color': '#808080',
             'linestyle': ':',
             'marker': 'o',
@@ -59,8 +59,8 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
             'markersize': 5
         },
         {
-            'file': find_csv('cycles_sherman5_lgmres107.csv'),
-            'name': 'LGMRES(107,3)',
+            'file': find_csv('cycles_sherman5_lgmres28.csv'),
+            'name': 'LGMRES(28,2)',
             'color': '#404040',
             'linestyle': '--',
             'marker': 's',
@@ -71,7 +71,7 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
             'file': find_csv('cycles_sherman5_dlk.csv'),
             'name': 'DMDc-LQR-GMRES',
             'color': '#000000',
-            'linestyle': '--',
+            'linestyle': '-',
             'marker': '^',
             'linewidth': 1.4,
             'markersize': 5
@@ -99,7 +99,10 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
 
         # Rango de marcadores limpio (10 marcadores por curva)
         markevery = max(1, len(c) // 10)
-        label_text = f"{s['name']}, cycles = {total_cycles}"
+        if len(r) > 0 and r[-1] >= tol * 1.5:
+            label_text = f"{s['name']} (NC)"
+        else:
+            label_text = f"{s['name']}, cycles = {total_cycles}"
 
         ax.semilogy(c, r,
                     linestyle=s['linestyle'],
@@ -114,9 +117,9 @@ def plot_comparison(output_prefix="results/figures/Comparisonofmethodssherman5",
                     label=label_text)
 
     ax.set_xlabel('Number of cycles ($k$)', fontsize=11)
-    ax.set_ylabel(r'Residual norm $\|r_k\|$', fontsize=11)
+    ax.set_ylabel(r'Residual norm $\|r_k\|/\|r_0\|$', fontsize=11)
     ax.set_ylim([tol * 0.5, 1.3])
-    ax.set_xlim([0, max_x + 5])
+    ax.set_xlim([0, min(65, max_x + 5)])
 
     # Estilo de leyenda SIAM sin marco
     ax.legend(frameon=False, fontsize=9.5, loc='upper right')

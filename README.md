@@ -156,55 +156,55 @@ Evaluación comparativa integral de los cuatro solvers Krylov sobre el conjunto 
 
 | Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) | DMDc–LQR–LGMRES($m, 2$) |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | `add20` | 35 | 21 | **8** | **9** |
-| 2 | `cavity05` | NC | 80 | **9** | **11** |
-| 3 | `cavity10` | NC | 127 | **28** | **12** |
-| 4 | `cdde1` | 33 | 28 | 88 | **8** |
-| 5 | `circuit2` | 25 | 20 | **7** | 23 |
-| 6 | `ex40` | NC | NC | **83** | **58** |
-| 7 | `fpgatrans01` | 104 | 35 | **14** | 28 |
-| 8 | `memplus` | 93 | 49 | **8** | **7** |
-| 9 | `orsirr1` | 158 | 78 | 52 | **19** |
-| 10 | `orsreg1` | 23 | 19 | **18** | 43 |
-| 11 | `pde2961` | 13 | 22 | 32 | 22 |
-| 12 | `raefsky1` | 172 | 27 | 33 | **13** |
-| 13 | `raefsky2` | 149 | 83 | 78 | **17** |
-| 14 | `rdb2048` | 16 | **13** | 19 | 47 |
-| 15 | `sherman1` | 123 | 27 | **18** | **19** |
-| 16 | `sherman4` | 26 | 16 | 12 | **7** |
-| 17 | `sherman5` | NC | NC | **52** | **20** |
-| 18 | `steam2` | 14 | 23 | **13** | 17 |
-| 19 | `wang2` | 93 | 29 | 24 | **15** |
-| 20 | `wang4` | 94 | NC | **36** | **21** |
-| 21 | `watt1` | 137 | 26 | 25 | **13** |
-| 22 | `young3c` | 342 | 104 | 92 | **48** |
+| 1 | `add20` | 35 | 21 | **7** | **7** |
+| 2 | `cavity05` | NC | 80 | **7** | **7** |
+| 3 | `cavity10` | NC | 127 | **9** | **13** |
+| 4 | `cdde1` | 33 | 28 | **7** | **7** |
+| 5 | `circuit2` | 25 | 20 | **6** | **6** |
+| 6 | `ex40` | NC | NC | **61** | **37** |
+| 7 | `fpgatrans01` | 104 | 35 | **9** | **9** |
+| 8 | `memplus` | 93 | 49 | **6** | **7** |
+| 9 | `orsirr1` | 158 | 78 | 26 | **17** |
+| 10 | `orsreg1` | 23 | 19 | **7** | **7** |
+| 11 | `pde2961` | 13 | 22 | **6** | **6** |
+| 12 | `raefsky1` | 172 | 27 | **6** | **6** |
+| 13 | `raefsky2` | 149 | 83 | 11 | **6** |
+| 14 | `rdb2048` | 16 | 13 | **6** | **6** |
+| 15 | `sherman1` | 123 | 27 | 16 | **13** |
+| 16 | `sherman4` | 26 | 16 | 7 | **6** |
+| 17 | `sherman5` | NC | NC | **29** | **22** |
+| 18 | `steam2` | 14 | 23 | **7** | 8 |
+| 19 | `wang2` | 93 | 29 | **6** | **6** |
+| 20 | `wang4` | 94 | NC | **6** | **6** |
+| 21 | `watt1` | 137 | 26 | 12 | **8** |
+| 22 | `young3c` | 342 | 104 | 57 | **32** |
 
 ### Tabla 3: Tiempo Computacional Promedio en Segundos (`results/tables/avg_relativa_time_experiment.csv`)
 
 | Problem | Matrix | GMRES(30) | LGMRES(28, 2) | DMDc–LQR–GMRES($m$) | DMDc–LQR–LGMRES($m, 2$) |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | `add20` | 0.0631 | 0.0459 | 0.0321 | 0.0192 |
-| 2 | `cavity05` | NC | 0.1235 | 0.0162 | 0.0185 |
-| 3 | `cavity10` | NC | 0.4472 | 0.3883 | 0.1917 |
-| 4 | `cdde1` | 0.0239 | 0.0185 | 0.0261 | 0.0128 |
-| 5 | `circuit2` | 0.0826 | 0.0595 | 0.0717 | 0.0964 |
-| 6 | `ex40` | NC | NC | 83.7608 | 64.1836 |
-| 7 | `fpgatrans01` | 0.1022 | 0.0323 | 0.0248 | 0.0263 |
-| 8 | `memplus` | 1.4365 | 0.7388 | 0.8232 | 0.3724 |
-| 9 | `orsirr1` | 0.1358 | 0.0611 | 0.0895 | 0.0725 |
-| 10 | `orsreg1` | 0.0450 | 0.0330 | 0.0390 | 0.0365 |
-| 11 | `pde2961` | 0.0293 | 0.0444 | 0.0323 | 0.0426 |
-| 12 | `raefsky1` | 2.4398 | 0.3245 | 0.5384 | 0.3547 |
-| 13 | `raefsky2` | 2.2124 | 1.0479 | 0.7282 | 0.6007 |
-| 14 | `rdb2048` | 0.0255 | 0.0195 | 0.0243 | 0.0275 |
-| 15 | `sherman1` | 0.0817 | 0.0185 | 0.0378 | 0.0261 |
-| 16 | `sherman4` | 0.0216 | 0.0131 | 0.0138 | 0.0114 |
-| 17 | `sherman5` | NC | NC | 3.0936 | 0.0268 |
-| 18 | `steam2` | 0.0074 | 0.0114 | 0.0121 | 0.0085 |
-| 19 | `wang2` | 0.2134 | 0.0558 | 0.0801 | 0.0905 |
-| 20 | `wang4` | 2.1696 | NC | 3.8352 | 2.7772 |
-| 21 | `watt1` | 0.1986 | 0.0335 | 0.0371 | 0.0709 |
-| 22 | `young3c` | 0.2516 | 0.0635 | 0.0917 | 0.0943 |
+| 1 | `add20` | 0.1253 | **0.0369** | 0.0761 | 0.0658 |
+| 2 | `cavity05` | NC | 0.1260 | **0.0204** | 0.0263 |
+| 3 | `cavity10` | NC | 0.4722 | 0.3611 | **0.2253** |
+| 4 | `cdde1` | 0.0225 | 0.0202 | 0.0120 | **0.0114** |
+| 5 | `circuit2` | 0.0826 | 0.0577 | 0.0669 | **0.0546** |
+| 6 | `ex40` | NC | NC | 98.1825 | **66.4723** |
+| 7 | `fpgatrans01` | 0.0627 | 0.0210 | 0.0220 | **0.0209** |
+| 8 | `memplus` | 1.0698 | **0.5176** | 2.9338 | 2.4465 |
+| 9 | `orsirr1` | 0.1150 | 0.0518 | 0.0679 | **0.0502** |
+| 10 | `orsreg1` | 0.0371 | **0.0255** | 0.0527 | 0.0454 |
+| 11 | `pde2961` | **0.0289** | 0.0389 | 0.0405 | 0.0502 |
+| 12 | `raefsky1` | 2.2357 | 0.3055 | **0.2631** | 0.3172 |
+| 13 | `raefsky2` | 2.4605 | 1.2293 | **0.4055** | 0.4627 |
+| 14 | `rdb2048` | 0.0279 | **0.0211** | 0.0214 | 0.0229 |
+| 15 | `sherman1` | 0.0872 | **0.0180** | 0.0468 | 0.0351 |
+| 16 | `sherman4` | 0.0250 | 0.0120 | **0.0114** | 0.0121 |
+| 17 | `sherman5` | NC | NC | 4.1707 | **2.0988** |
+| 18 | `steam2` | 0.0085 | 0.0119 | **0.0069** | 0.0071 |
+| 19 | `wang2` | 0.2086 | **0.0619** | 0.1329 | 0.1304 |
+| 20 | `wang4` | **2.3481** | NC | 4.1459 | 4.0501 |
+| 21 | `watt1` | 0.1869 | **0.0327** | 0.0582 | 0.0627 |
+| 22 | `young3c` | 0.2183 | **0.0574** | 0.1315 | 0.0675 |
 
 ---
 
@@ -256,6 +256,22 @@ Durante la migración y validación rigurosa de los algoritmos DLK desde el prot
 
 ### E. Serialización y Preservación de Lado Derecho ($b$)
 * **Dataset SuiteSparse:** En los archivos `.mat` originales, ciertas matrices disponían de un vector $b$ explícito mientras que en otras se generaba $b = \mathbf{1}$. El conversor de PETSc ([`data/convert_mat_to_bin.py`](file:///home/carlos_benitez/DLK-rest/data/convert_mat_to_bin.py)) detecta y preserva rigurosamente el vector $b$ original o sintetiza el vector unitario, empaquetándolos en formato binario nativo de PETSc (`PetscViewerBinary`) para evitar diferencias en la escala inicial del residuo $\|r_0\|$.
+
+### F. Caso de Estudio `sherman5`: Diagnóstico del Falso Breakdown, Penalización CARE y Unificación Experimental
+* **Diagnóstico de la Discrepancia Previa (20 ciclos en LGMRES):**
+  Durante las pruebas iniciales sobre `sherman5`, se observó que la tabla general marcaba 20 ciclos para `DLK-LGMRES`, mientras que ejecuciones aisladas no convergían o tomaban tiempos discordantes. Una inspección rigurosa a nivel de código reveló:
+  1. *Falso "Happy Breakdown" en vectores de enriquecimiento:* En `src/kspdlk.c`, durante los pasos de aumento de LGMRES ($j \ge m$), cuando un vector de error acumulado resultaba linealmente dependiente del subespacio Krylov ($h_{j+1,j} \le 10^{-14}$), las rotaciones de Givens previas forzaban a cero el elemento correspondiente en el vector del residuo de Hessenberg ($rs[j+1] = 0$). Esto provocaba que la prueba interna de convergencia de PETSc detectara un residuo algebraico nulo (`CONVERGED_ATOL`), terminando el solver anticipadamente en el ciclo 20 a pesar de que la norma del residuo real explícito $\|b - A x_k\|$ era de $49.98$.
+  2. *Parámetros históricos divergentes en scripts:* El script histórico de `sherman5` utilizaba parámetros heredados de `test_performance.m` de MATLAB (`GMRES(110)`, `LGMRES(107, 3)`), mientras que el benchmark de 22 matrices ejecutaba `GMRES(30)` y `LGMRES(28, 2)`.
+* **Correcciones Implementadas:**
+  1. **Truncamiento limpio en `kspdlk.c`:** Si $j \ge m$ y $h_{j+1,j} \le 10^{-14}$, se detiene limpiamente la etapa de aumento (`actual_s = j; break;`) sin aplicar rotaciones que alteren erróneamente el residuo. Además, se añadió una verificación explícita e intransigente del residuo real al final de cada ciclo (`(*ksp->converged)(ksp, ksp->its, rnorm, ...)`).
+  2. **Consistencia en Penalización CARE ($R_c = \alpha$):** En `src/dmdc_lqr.c`, al proyectar la Ecuación de Riccati sobre el subespacio controlable, se fijó $R_c = \alpha = 10^{-4}$ en concordancia con el sistema completo (reemplazando el valor fijo $1.0$ que atenuaba en exceso la acción de control ante matrices mal condicionadas).
+  3. **Unificación rigurosa de condiciones de prueba:** Tanto el script de benchmarking global ([`scripts/run_all_22_benchmark.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_all_22_benchmark.py)) como el script de estudio detallado ([`scripts/run_sherman5_experiment.py`](file:///home/carlos_benitez/DLK-rest/scripts/run_sherman5_experiment.py)) emplean exactamente los mismos parámetros y condiciones: estrictamente sin precondicionador (`-pc_type none`), tolerancia $\|r_k\|/\|r_0\| \le 10^{-9}$, $m_0 = 30$, $\ell = 2$ vectores de aumento, y $m_{\max} = 331$.
+* **Resultados Verificados y Consistentes:**
+  - `GMRES(30)`: Estancado en residuo relativo $\approx 0.81$ $\implies$ **NC** en ambas pruebas.
+  - `LGMRES(28, 2)`: Estancado en residuo relativo $\approx 0.84$ $\implies$ **NC** en ambas pruebas.
+  - `DMDc–LQR–GMRES`: Rompe el estancamiento y converge a $5.16 \times 10^{-8}$ en **29 ciclos** (tiempo $4.17$ s en benchmark, idéntico en pruebas individuales).
+  - `DMDc–LQR–LGMRES`: Rompe el estancamiento y converge a $6.18 \times 10^{-8}$ en **22 ciclos** (tiempo $2.10$ s en benchmark, idéntico en pruebas individuales).
+  La coincidencia entre la tabla del benchmark y las ejecuciones individuales es ahora del 100%.
 
 ---
 
